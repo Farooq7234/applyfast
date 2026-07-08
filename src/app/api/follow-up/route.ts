@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     let failed = 0;
 
     await Promise.allSettled(
-      pending.map(async (app) => {
+      pending.map(async (app:any) => {
         try {
           if (!app.companyEmail) throw new Error("Missing recipient email");
 
