@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ApplyFast
 
-## Getting Started
+Apply to software engineering jobs in under 15 seconds.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** App Router
+- **Better Auth** (email/password auth)
+- **Prisma 7** + **Neon PostgreSQL**
+- **Resend** (email sending)
+- **shadcn/ui** + **Tailwind CSS**
+- **React Hook Form** + **Zod**
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy `.env.local` and fill in your values:
+
+```bash
+DATABASE_URL="postgresql://..."         # Neon connection string
+BETTER_AUTH_SECRET="..."                # Random 32+ char secret
+BETTER_AUTH_URL="http://localhost:3000"
+RESEND_API_KEY="re_..."                 # From resend.com
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+### 3. Run database migrations
+
+```bash
+npx prisma migrate dev --name init
+```
+
+### 4. Start development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Auth** — Sign up, sign in, sign out with Better Auth
+- **Profile** — Set name, portfolio, LinkedIn, GitHub, resume URL once
+- **New Application** — Fill company/email/role, send email in one click
+- **Applications table** — View, resend, delete all applications with search
+- **Email templates** — Default template with `{{role}}`, `{{company}}`, `{{name}}` etc.
+- **Dashboard** — Stats cards (total, sent today, failed, pending follow-ups)
+- **Follow-up cron** — `GET /api/follow-up` endpoint for automated follow-ups
 
-## Learn More
+## Prisma migration
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Initial migration
+npx prisma migrate dev --name init
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# After schema changes
+npx prisma migrate dev --name <description>
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Generate client only
+npx prisma generate
+```
 
-## Deploy on Vercel
+## Deploy to Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push to GitHub
+2. Import in Vercel
+3. Add all env vars in Vercel project settings
+4. Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For the follow-up cron, use Vercel Cron Jobs to call `GET /api/follow-up` with `Authorization: Bearer <CRON_SECRET>`.

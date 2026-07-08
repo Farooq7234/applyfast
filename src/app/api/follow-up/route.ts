@@ -1,0 +1,151 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import {
+  buildEmailBody,
+  buildEmailHtml,
+  getResend,
+} from "@/lib/email";
+
+// GET /api/cron/follow-up
+export async function GET(request: Request) {
+  try {
+    // Allow Vercel Cron OR Bearer token
+    const authHeader = request.headers.get("authorization");
+    const isVercelCron = request.headers.get("x-vercel-cron") === "1";
+
+    if (
+      !isVercelCron &&
+      process.env.CRON_SECRET &&
+      authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const pending = await db.application.findMany({
+      where: {
+        status: "sent",
+        followUpSent: false,
+        followUpDate: {
+          not: null,
+          lte: new Date(),
+        },
+      },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        followUpDate: "asc",
+      },
+      take: 25,
+    });
+
+    if (pending.length === 0) {
+      return NextResponse.json({
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        message: "No follow ups due.",
+      });
+    }
+
+    let succeeded = 0;
+    let failed = 0;
+
+    await Promise.allSettled(
+      pending.map(async (app) => {
+        try {
+          if (!app.companyEmail) {
+            throw new Error("Missing recipient email");
+          }
+
+          const template = `Hi {{recruiter_name}},
+
+I hope you are doing well.
+
+I wanted to briefly follow up regarding my application for the {{role}} position at {{company}}.
+
+I remain genuinely interested in the opportunity and would be happy to provide any additional information if helpful.
+
+Thank you for your time and consideration. I look forward to hearing from you.
+
+Best regards,
+
+{{name}}`;
+
+          const text = buildEmailBody(template, {
+            role: app.role,
+            company: app.company,
+            recruiterName: app.recruiterName,
+            portfolio: app.user.portfolio,
+            resumeUrl: app.user.resumeUrl,
+            name: app.user.name,
+          });
+
+          const html = buildEmailHtml(template, {
+            role: app.role,
+            company: app.company,
+            recruiterName: app.recruiterName,
+            portfolio: app.user.portfolio,
+            resumeUrl: app.user.resumeUrl,
+            name: app.user.name,
+          });
+
+          await getResend().emails.send({
+            from: "Umar Farooq <contact@farooqx.in>",
+            to: app.companyEmail,
+            subject: `Following up: ${app.subject}`,
+            text,
+            html,
+            ...(app.user.resumeUrl
+              ? {
+                  attachments: [
+                    {
+                      filename: "Resume.pdf",
+                      path: app.user.resumeUrl,
+                    },
+                  ],
+                }
+              : {}),
+          });
+
+          await db.application.update({
+            where: {
+              id: app.id,
+            },
+            data: {
+              followUpSent: true,
+            },
+          });
+
+          succeeded++;
+        } catch (error) {
+          failed++;
+
+          console.error("Follow up failed", {
+            applicationId: app.id,
+            company: app.company,
+            email: app.companyEmail,
+            error,
+          });
+        }
+      })
+    );
+
+    return NextResponse.json({
+      processed: pending.length,
+      succeeded,
+      failed,
+    });
+  } catch (error) {
+    console.error("Cron job failed:", error);
+
+    return NextResponse.json(
+      {
+        error: "Internal Server Error",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
