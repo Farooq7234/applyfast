@@ -93,23 +93,32 @@ export async function createApplication(data: unknown) {
   return { success: true, applicationId: application.id };
 }
 
-export async function getApplications(search?: string) {
+export async function getApplications(search?: string, page = 1, pageSize = 15) {
   const session = await requireSession();
 
-  return db.application.findMany({
-    where: {
-      userId: session.user.id,
-      ...(search
-        ? {
-            OR: [
-              { company: { contains: search, mode: "insensitive" } },
-              { role: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const where = {
+    userId: session.user.id,
+    ...(search
+      ? {
+          OR: [
+            { company: { contains: search, mode: "insensitive" as const } },
+            { role: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [applications, total] = await Promise.all([
+    db.application.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.application.count({ where }),
+  ]);
+
+  return { applications, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
 }
 
 export async function getApplication(id: string) {
