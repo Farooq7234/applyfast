@@ -1,11 +1,9 @@
-import { getServerSession } from "@/lib/session";
-import { redirect } from "next/navigation";
+
 import { getProfile } from "@/actions/profile";
 import { ProfileForm } from "@/components/dashboard/profile-form";
 
 export default async function ProfilePage() {
-  const session = await getServerSession();
-  if (!session) redirect("/sign-in");
+
 
   const profile = await getProfile();
 
