@@ -84,7 +84,7 @@ export async function createApplication(data: unknown) {
       subject,
       body: text,
       status: "sent",
-      followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      followUpDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
   });
 
