@@ -53,7 +53,7 @@ interface TemplateFormProps {
     subject: string;
     body: string;
     isDefault: boolean;
-  }) => Promise<void>;
+  }) => void | Promise<void>;
   onCancel: () => void;
   saving: boolean;
 }
