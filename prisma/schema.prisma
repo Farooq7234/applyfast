@@ -78,6 +78,7 @@ model Application {
   role          String
   recruiterName String?
   subject       String
+  resendEmailId  String?  @unique // Resend's email ID, set when sent
   body          String
   status        ApplicationStatus @default(sent)
   followUpDate  DateTime?
@@ -101,6 +102,18 @@ model Template {
 
 enum ApplicationStatus {
   sent
+  delivered
+  opened
+  clicked
+  bounced
+  complained
+  delivery_delayed
   failed
-  pending
+}
+
+// idempotency table so retried webhooks don't reprocess
+model WebhookEvent {
+  id        String   @id // svix-id from header
+  type      String
+  processedAt DateTime @default(now())
 }

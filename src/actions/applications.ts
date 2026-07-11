@@ -68,7 +68,8 @@ export async function createApplication(data: unknown) {
         recruiterName: recruiterName || null,
         subject,
         body: text,
-        status: "failed",        followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: "failed",       
+        followUpDate: null,
       },
     });
     return { error: `Email delivery failed: ${sendError.message}` };
