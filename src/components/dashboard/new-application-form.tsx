@@ -13,8 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Send, AlertCircle, Sparkles } from "lucide-react";
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
-import type { Template } from "@/generated/prisma/client";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
+import { Template } from "@prisma/client";
 
 interface NewApplicationFormProps {
   templates: Template[];

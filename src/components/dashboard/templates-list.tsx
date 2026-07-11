@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { Template } from "@/generated/prisma/client";
 import { toast } from "sonner";
 import {
   createTemplate,
@@ -34,6 +33,7 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
+import { Template } from "@prisma/client";
 
 // ─── Variable tokens shown as helpers ─────────────────────────────────────────
 const VARIABLES = [

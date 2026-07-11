@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Application } from "@/generated/prisma/client";
 import { toast } from "sonner";
 import { deleteApplication, resendApplication } from "@/actions/applications";
 import { Input } from "@/components/ui/input";
@@ -41,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Trash2, RefreshCw, Eye, Search, SendHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Application } from "@prisma/client";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   sent: "default",
