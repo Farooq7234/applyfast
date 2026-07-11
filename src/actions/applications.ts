@@ -48,13 +48,13 @@ export async function createApplication(data: unknown) {
   };
 
   const subject = buildEmailSubject(templateSubject, role, company);
-  const text = buildEmailBody(templateBody, vars);
+ const html = buildEmailBody(templateBody, vars);
 
   const { error: sendError } = await getResend().emails.send({
     from: "Umar Farooq <contact@farooqx.in>",
     to: companyEmail,
     subject,
-    text,
+    html,
   });
 
   if (sendError) {
@@ -67,7 +67,7 @@ export async function createApplication(data: unknown) {
         role,
         recruiterName: recruiterName || null,
         subject,
-        body: text,
+        body: html,
         status: "failed",       
         followUpDate: null,
       },
@@ -83,7 +83,7 @@ export async function createApplication(data: unknown) {
       role,
       recruiterName: recruiterName || null,
       subject,
-      body: text,
+      body: html,
       status: "sent",
       followUpDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
