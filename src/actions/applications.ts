@@ -50,7 +50,7 @@ export async function createApplication(data: unknown) {
   const subject = buildEmailSubject(templateSubject, role, company);
  const html = buildEmailBody(templateBody, vars);
 
-  const { error: sendError } = await getResend().emails.send({
+  const {data:sendData, error: sendError } = await getResend().emails.send({
     from: "Umar Farooq <contact@farooqx.in>",
     to: companyEmail,
     subject,
@@ -84,6 +84,7 @@ export async function createApplication(data: unknown) {
       recruiterName: recruiterName || null,
       subject,
       body: html,
+      resendEmailId: sendData?.id || null,
       status: "sent",
       followUpDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
@@ -140,11 +141,11 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user) return { error: "User not found" };
 
-  const { error: sendError } = await getResend().emails.send({
+  const {data:sendData, error: sendError } = await getResend().emails.send({
     from: "Umar Farooq <contact@farooqx.in>",
     to: application.companyEmail,
     subject: application.subject,
-    text: application.body,
+    html: application.body,
   });
 
   if (sendError) {
@@ -154,7 +155,7 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
 
   await db.application.update({
     where: { id },
-    data: { status: "sent", createdAt: new Date() },
+    data: { status: "sent", createdAt: new Date() , resendEmailId: sendData?.id ?? null,},
   });
 
   revalidatePath("/dashboard/applications");
