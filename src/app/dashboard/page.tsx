@@ -4,7 +4,15 @@ import { ensureDefaultTemplate } from "@/actions/templates";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { SendHorizontal, CheckCircle2, XCircle, Clock, Plus } from "lucide-react";
+import {
+  SendHorizontal,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Plus,
+  MousePointerClick,
+  MailOpen,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -50,18 +58,35 @@ export default async function DashboardPage() {
           variant="success"
         />
         <StatCard
-          title="Failed"
-          value={stats.failed}
-          icon={XCircle}
-          description="Need attention"
-          variant="destructive"
-        />
-        <StatCard
           title="Pending Follow Ups"
           value={stats.pendingFollowUps}
           icon={Clock}
           description="Follow ups due"
           variant="warning"
+        />
+
+        <StatCard
+          title="Opened"
+          value={stats.opened}
+          icon={MailOpen}
+          description="Emails opened"
+          variant="success"
+        />
+
+        <StatCard
+          title="Clicked"
+          value={stats.clicked}
+          icon={MousePointerClick}
+          description="Links clicked"
+          variant="success"
+        />
+
+        <StatCard
+          title="Failed"
+          value={stats.failed}
+          icon={XCircle}
+          description="Need attention"
+          variant="destructive"
         />
       </div>
 

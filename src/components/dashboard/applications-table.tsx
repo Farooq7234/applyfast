@@ -147,7 +147,7 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
             {applications.map((app) => (
               <TableRow key={app.id}>
                 <TableCell className="font-medium">{app.company}</TableCell>
-                <TableCell>{app.role}</TableCell>
+                <TableCell>{app.role.slice(0, 7)}...</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{app.companyEmail}</TableCell>
                 <TableCell className="text-sm">{app.recruiterName ?? "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">

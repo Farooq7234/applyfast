@@ -180,24 +180,72 @@ export async function getDashboardStats() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const [total, sentToday, failed, pendingFollowUps] = await Promise.all([
-    db.application.count({ where: { userId } }),
+  const [
+    total,
+    sentToday,
+    failed,
+    pendingFollowUps,
+    opened,
+    clicked,
+  ] = await Promise.all([
     db.application.count({
-      where: { userId, status: "sent", createdAt: { gte: today, lt: tomorrow } },
+      where: { userId },
     }),
-    db.application.count({ where: { userId, status: "failed" } }),
+
+    db.application.count({
+      where: {
+        userId,
+        status: "sent",
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    }),
+
+    db.application.count({
+      where: {
+        userId,
+        status: "failed",
+      },
+    }),
+
     db.application.count({
       where: {
         userId,
         followUpSent: false,
-        followUpDate: { lte: new Date() },
+        followUpDate: {
+          lte: new Date(),
+        },
         status: "sent",
+      },
+    }),
+
+    db.application.count({
+      where: {
+        userId,
+        status: "opened",
+      },
+    }),
+
+    db.application.count({
+      where: {
+        userId,
+        status: "clicked",
       },
     }),
   ]);
 
-  return { total, sentToday, failed, pendingFollowUps };
+  return {
+    total,
+    sentToday,
+    failed,
+    pendingFollowUps,
+    opened,
+    clicked,
+  };
 }
