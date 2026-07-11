@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Send, AlertCircle, Sparkles } from "lucide-react";
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import type { Template } from "@/generated/prisma/client";
+import { RoleCombobox } from "@/components/dashboard/role-combobox";
 
 interface NewApplicationFormProps {
   templates: Template[];
@@ -249,7 +250,12 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="role">Role *</Label>
-              <Input id="role" placeholder="Senior Frontend Engineer" {...register("role")} />
+              <RoleCombobox
+                value={watchedValues.role ?? ""}
+                onChange={(val) => setValue("role", val, { shouldValidate: true })}
+                onBlur={() => {}}
+                error={errors.role?.message}
+              />
               {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
             </div>
 
