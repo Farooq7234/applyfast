@@ -20,18 +20,26 @@ export function buildEmailBody(
     name: string;
   }
 ): string {
-  const greeting = vars.recruiterName
-    ? `Hi ${vars.recruiterName},`
-    : "Hi,";
+  const greeting = vars.recruiterName ? `Hi ${vars.recruiterName},` : "Hi,";
 
-  return template
+  const plain = template
+    .replace(/\r\n/g, "\n")
     .replace(/Hi \{\{recruiter_name\}\},/g, greeting)
     .replace(/\{\{recruiter_name\}\}/g, vars.recruiterName ?? "")
     .replace(/\{\{role\}\}/g, vars.role)
     .replace(/\{\{company\}\}/g, vars.company)
-    .replace(/\{\{portfolio\}\}/g, vars.portfolio ?? "#")
-    .replace(/\{\{resume\}\}/g, vars.resumeUrl ?? "#")
-    .replace(/\{\{name\}\}/g, vars.name);
+    .replace(/\{\{name\}\}/g, vars.name)
+    .replace(/\{\{portfolio\}\}/g, vars.portfolio ? `<a href="${vars.portfolio}">${vars.portfolio}</a>` : "")
+    .replace(/\{\{resume\}\}/g, vars.resumeUrl ? `<a href="${vars.resumeUrl}">${vars.resumeUrl}</a>` : "");
+
+  const paragraphs = plain
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
+    .join("");
+
+  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#111;">${paragraphs}</div>`;
 }
 
 export function buildEmailSubject(
