@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { applicationSchema, type ApplicationInput } from "@/lib/validations";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Send, AlertCircle } from "lucide-react";
+import { Loader2, Send, AlertCircle, Sparkles } from "lucide-react";
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import type { Template } from "@/generated/prisma/client";
 
@@ -24,6 +24,78 @@ interface NewApplicationFormProps {
   } | null;
 }
 
+// ---- Email parsing helpers ----
+
+// local parts that mean "no real person", so we skip recruiter name
+const GENERIC_LOCAL_PARTS = new Set([
+  "careers", "career", "jobs", "job", "hr", "hiring", "recruiting",
+  "recruiter", "talent", "people", "info", "contact", "team",
+  "admin", "support", "apply", "resume", "resumes", "hello",
+]);
+
+// subdomains / prefixes to strip before extracting company name from domain
+const DOMAIN_PREFIXES_TO_STRIP = ["careers", "jobs", "mail", "smtp", "hr", "talent", "www"];
+
+function capitalize(word: string) {
+  if (!word) return word;
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+function extractCompanyFromDomain(domain: string): string {
+  // domain e.g. "careers.acme-corp.co.in" -> "Acme Corp"
+  let parts = domain.toLowerCase().split(".");
+
+  // strip known non-company prefixes (careers.acme.com -> acme.com)
+  while (parts.length > 2 && DOMAIN_PREFIXES_TO_STRIP.includes(parts[0])) {
+    parts = parts.slice(1);
+  }
+
+  // the company segment is usually the first label left before the TLD chain
+  // (acme.com -> acme | acme.co.in -> acme | acme-corp.in -> acme-corp)
+  const companySegment = parts[0] ?? "";
+
+  return companySegment
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+}
+
+function extractRecruiterFromLocalPart(localPart: string): string {
+  const cleaned = localPart.toLowerCase().trim();
+
+  if (GENERIC_LOCAL_PARTS.has(cleaned)) return "";
+
+  // firstname.lastname / firstname_lastname / firstname-lastname
+  const nameParts = cleaned
+    .split(/[._-]+/)
+    .filter((p) => p.length > 0 && isNaN(Number(p))); // drop stray numbers like john123
+
+  if (nameParts.length === 0) return "";
+
+  // strip trailing digits from each chunk (e.g. "john99" -> "john")
+  const cleanedParts = nameParts.map((p) => p.replace(/\d+$/, "")).filter(Boolean);
+
+  if (cleanedParts.length === 0) return "";
+  if (cleanedParts.length === 1 && GENERIC_LOCAL_PARTS.has(cleanedParts[0])) return "";
+
+  return cleanedParts.map(capitalize).join(" ");
+}
+
+function parseEmail(email: string): { company: string; recruiterName: string } | null {
+  const match = email.trim().match(/^([^\s@]+)@([^\s@]+\.[^\s@]+)$/);
+  if (!match) return null;
+
+  const [, localPart, domain] = match;
+
+  return {
+    company: extractCompanyFromDomain(domain),
+    recruiterName: extractRecruiterFromLocalPart(localPart),
+  };
+}
+
+// ---- Component ----
+
 export function NewApplicationForm({ templates, profile }: NewApplicationFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -31,12 +103,23 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
     templates.find((t) => t.isDefault) ?? templates[0] ?? null
   );
   const [preview, setPreview] = useState(false);
+  const [autoFilled, setAutoFilled] = useState<{ company: boolean; recruiterName: boolean }>({
+    company: false,
+    recruiterName: false,
+  });
+
+  // track values we auto-filled, so we don't clobber a manual edit on the next paste
+  const lastAutoValues = useRef<{ company: string; recruiterName: string }>({
+    company: "",
+    recruiterName: "",
+  });
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<ApplicationInput>({
     resolver: zodResolver(applicationSchema),
@@ -46,6 +129,31 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
   });
 
   const watchedValues = watch();
+
+  function handleEmailChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const email = e.target.value;
+    const parsed = parseEmail(email);
+    if (!parsed) return;
+
+    const current = getValues();
+
+    // only auto-fill company if it's empty or still equals what we auto-filled last time
+    if (parsed.company && (!current.company || current.company === lastAutoValues.current.company)) {
+      setValue("company", parsed.company, { shouldValidate: true });
+      lastAutoValues.current.company = parsed.company;
+      setAutoFilled((s) => ({ ...s, company: true }));
+    }
+
+    // same guard for recruiter name; skip if we couldn't confidently extract one
+    if (
+      parsed.recruiterName &&
+      (!current.recruiterName || current.recruiterName === lastAutoValues.current.recruiterName)
+    ) {
+      setValue("recruiterName", parsed.recruiterName, { shouldValidate: true });
+      lastAutoValues.current.recruiterName = parsed.recruiterName;
+      setAutoFilled((s) => ({ ...s, recruiterName: true }));
+    }
+  }
 
   const previewBody = selectedTemplate
     ? buildEmailBody(selectedTemplate.body, {
@@ -74,7 +182,8 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
     });
   }
 
-  if (!profile?.resumeUrl) {    return (
+  if (!profile?.resumeUrl) {
+    return (
       <Card className="max-w-lg">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
@@ -104,16 +213,38 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Card>
           <CardContent className="pt-6 flex flex-col gap-4">
+            {/* Email is now the first field — paste it and company/recruiter auto-fill */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="company">Company Name *</Label>
-              <Input id="company" placeholder="Acme Corp" {...register("company")} />
-              {errors.company && <p className="text-xs text-destructive">{errors.company.message}</p>}
+              <Label htmlFor="companyEmail">Company Email *</Label>
+              <Input
+                id="companyEmail"
+                type="email"
+                placeholder="firstname.lastname@company.com"
+                {...register("companyEmail", { onChange: handleEmailChange })}
+              />
+              {errors.companyEmail && <p className="text-xs text-destructive">{errors.companyEmail.message}</p>}
+              <p className="text-xs text-muted-foreground">
+                Paste any format — name@company.com, first.last@company.in, or careers@company.com — and we'll fill in the fields below.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="companyEmail">Company Email *</Label>
-              <Input id="companyEmail" type="email" placeholder="jobs@acme.com" {...register("companyEmail")} />
-              {errors.companyEmail && <p className="text-xs text-destructive">{errors.companyEmail.message}</p>}
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="company">Company Name *</Label>
+                {autoFilled.company && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3" /> auto
+                  </span>
+                )}
+              </div>
+              <Input
+                id="company"
+                placeholder="Acme Corp"
+                {...register("company", {
+                  onChange: () => setAutoFilled((s) => ({ ...s, company: false })),
+                })}
+              />
+              {errors.company && <p className="text-xs text-destructive">{errors.company.message}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -123,8 +254,21 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="recruiterName">Recruiter Name (optional)</Label>
-              <Input id="recruiterName" placeholder="John Smith" {...register("recruiterName")} />
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="recruiterName">Recruiter Name (optional)</Label>
+                {autoFilled.recruiterName && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3" /> auto
+                  </span>
+                )}
+              </div>
+              <Input
+                id="recruiterName"
+                placeholder="John Smith"
+                {...register("recruiterName", {
+                  onChange: () => setAutoFilled((s) => ({ ...s, recruiterName: false })),
+                })}
+              />
             </div>
 
             {templates.length > 0 && (
