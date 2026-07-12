@@ -247,7 +247,7 @@ export function NewApplicationForm({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-6xl">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-7xl">
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Card>
