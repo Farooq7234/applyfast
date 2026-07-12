@@ -29,13 +29,37 @@ interface NewApplicationFormProps {
 
 // local parts that mean "no real person", so we skip recruiter name
 const GENERIC_LOCAL_PARTS = new Set([
-  "careers", "career", "jobs", "job", "hr", "hiring", "recruiting",
-  "recruiter", "talent", "people", "info", "contact", "team",
-  "admin", "support", "apply", "resume", "resumes", "hello",
+  "careers",
+  "career",
+  "jobs",
+  "job",
+  "hr",
+  "hiring",
+  "recruiting",
+  "recruiter",
+  "talent",
+  "people",
+  "info",
+  "contact",
+  "team",
+  "admin",
+  "support",
+  "apply",
+  "resume",
+  "resumes",
+  "hello",
 ]);
 
 // subdomains / prefixes to strip before extracting company name from domain
-const DOMAIN_PREFIXES_TO_STRIP = ["careers", "jobs", "mail", "smtp", "hr", "talent", "www"];
+const DOMAIN_PREFIXES_TO_STRIP = [
+  "careers",
+  "jobs",
+  "mail",
+  "smtp",
+  "hr",
+  "talent",
+  "www",
+];
 
 function capitalize(word: string) {
   if (!word) return word;
@@ -55,11 +79,7 @@ function extractCompanyFromDomain(domain: string): string {
   // (acme.com -> acme | acme.co.in -> acme | acme-corp.in -> acme-corp)
   const companySegment = parts[0] ?? "";
 
-  return companySegment
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map(capitalize)
-    .join(" ");
+  return companySegment.split(/[-_]/).filter(Boolean).map(capitalize).join(" ");
 }
 
 function extractRecruiterFromLocalPart(localPart: string): string {
@@ -75,15 +95,20 @@ function extractRecruiterFromLocalPart(localPart: string): string {
   if (nameParts.length === 0) return "";
 
   // strip trailing digits from each chunk (e.g. "john99" -> "john")
-  const cleanedParts = nameParts.map((p) => p.replace(/\d+$/, "")).filter(Boolean);
+  const cleanedParts = nameParts
+    .map((p) => p.replace(/\d+$/, ""))
+    .filter(Boolean);
 
   if (cleanedParts.length === 0) return "";
-  if (cleanedParts.length === 1 && GENERIC_LOCAL_PARTS.has(cleanedParts[0])) return "";
+  if (cleanedParts.length === 1 && GENERIC_LOCAL_PARTS.has(cleanedParts[0]))
+    return "";
 
   return cleanedParts.map(capitalize).join(" ");
 }
 
-function parseEmail(email: string): { company: string; recruiterName: string } | null {
+function parseEmail(
+  email: string,
+): { company: string; recruiterName: string } | null {
   const match = email.trim().match(/^([^\s@]+)@([^\s@]+\.[^\s@]+)$/);
   if (!match) return null;
 
@@ -97,14 +122,20 @@ function parseEmail(email: string): { company: string; recruiterName: string } |
 
 // ---- Component ----
 
-export function NewApplicationForm({ templates, profile }: NewApplicationFormProps) {
+export function NewApplicationForm({
+  templates,
+  profile,
+}: NewApplicationFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
-    templates.find((t) => t.isDefault) ?? templates[0] ?? null
+    templates.find((t) => t.isDefault) ?? templates[0] ?? null,
   );
   const [preview, setPreview] = useState(false);
-  const [autoFilled, setAutoFilled] = useState<{ company: boolean; recruiterName: boolean }>({
+  const [autoFilled, setAutoFilled] = useState<{
+    company: boolean;
+    recruiterName: boolean;
+  }>({
     company: false,
     recruiterName: false,
   });
@@ -139,7 +170,10 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
     const current = getValues();
 
     // only auto-fill company if it's empty or still equals what we auto-filled last time
-    if (parsed.company && (!current.company || current.company === lastAutoValues.current.company)) {
+    if (
+      parsed.company &&
+      (!current.company || current.company === lastAutoValues.current.company)
+    ) {
       setValue("company", parsed.company, { shouldValidate: true });
       lastAutoValues.current.company = parsed.company;
       setAutoFilled((s) => ({ ...s, company: true }));
@@ -148,7 +182,8 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
     // same guard for recruiter name; skip if we couldn't confidently extract one
     if (
       parsed.recruiterName &&
-      (!current.recruiterName || current.recruiterName === lastAutoValues.current.recruiterName)
+      (!current.recruiterName ||
+        current.recruiterName === lastAutoValues.current.recruiterName)
     ) {
       setValue("recruiterName", parsed.recruiterName, { shouldValidate: true });
       lastAutoValues.current.recruiterName = parsed.recruiterName;
@@ -168,7 +203,11 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
     : "";
 
   const previewSubject = selectedTemplate
-    ? buildEmailSubject(selectedTemplate.subject, watchedValues.role ?? "{{role}}", watchedValues.company ?? "{{company}}")
+    ? buildEmailSubject(
+        selectedTemplate.subject,
+        watchedValues.role ?? "{{role}}",
+        watchedValues.company ?? "{{company}}",
+      )
     : "";
 
   function onSubmit(data: ApplicationInput) {
@@ -179,7 +218,6 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
         return;
       }
       toast.success("Application sent!");
-      router.push("/dashboard/applications");
     });
   }
 
@@ -209,7 +247,7 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-5xl">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-6xl">
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Card>
@@ -223,9 +261,14 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
                 placeholder="firstname.lastname@company.com"
                 {...register("companyEmail", { onChange: handleEmailChange })}
               />
-              {errors.companyEmail && <p className="text-xs text-destructive">{errors.companyEmail.message}</p>}
+              {errors.companyEmail && (
+                <p className="text-xs text-destructive">
+                  {errors.companyEmail.message}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Paste any format — name@company.com, first.last@company.in, or careers@company.com — and we'll fill in the fields below.
+                Paste any format — name@company.com, first.last@company.in, or
+                careers@company.com — and we'll fill in the fields below.
               </p>
             </div>
 
@@ -242,21 +285,32 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
                 id="company"
                 placeholder="Acme Corp"
                 {...register("company", {
-                  onChange: () => setAutoFilled((s) => ({ ...s, company: false })),
+                  onChange: () =>
+                    setAutoFilled((s) => ({ ...s, company: false })),
                 })}
               />
-              {errors.company && <p className="text-xs text-destructive">{errors.company.message}</p>}
+              {errors.company && (
+                <p className="text-xs text-destructive">
+                  {errors.company.message}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="role">Role *</Label>
               <RoleCombobox
                 value={watchedValues.role ?? ""}
-                onChange={(val) => setValue("role", val, { shouldValidate: true })}
+                onChange={(val) =>
+                  setValue("role", val, { shouldValidate: true })
+                }
                 onBlur={() => {}}
                 error={errors.role?.message}
               />
-              {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
+              {errors.role && (
+                <p className="text-xs text-destructive">
+                  {errors.role.message}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -272,7 +326,8 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
                 id="recruiterName"
                 placeholder="John Smith"
                 {...register("recruiterName", {
-                  onChange: () => setAutoFilled((s) => ({ ...s, recruiterName: false })),
+                  onChange: () =>
+                    setAutoFilled((s) => ({ ...s, recruiterName: false })),
                 })}
               />
             </div>
@@ -286,7 +341,9 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
                   onChange={(e) => {
                     const id = e.target.value;
                     setValue("templateId", id || undefined);
-                    setSelectedTemplate(templates.find((t) => t.id === id) ?? null);
+                    setSelectedTemplate(
+                      templates.find((t) => t.id === id) ?? null,
+                    );
                   }}
                 >
                   {templates.map((t) => (
@@ -322,18 +379,30 @@ export function NewApplicationForm({ templates, profile }: NewApplicationFormPro
       {/* Preview */}
       {preview && (
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium">Email Preview</p>
           <Card>
-            <CardContent className="pt-4 flex flex-col gap-3">
+            <CardContent className=" flex flex-col gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Subject</p>
-                <p className="text-sm font-medium">{previewSubject || "Fill in role to see subject"}</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Subject
+                </p>
+                <p className="text-sm font-medium">
+                  {previewSubject || "Fill in role to see subject"}
+                </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Body</p>
-                <pre className="text-xs whitespace-pre-wrap text-muted-foreground leading-relaxed">
-                  {previewBody || "Fill in the form to see preview"}
-                </pre>
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  Body
+                </p>
+
+                {previewBody ? (
+                  <div className="rounded-md border bg-background p-4 overflow-auto">
+                    <div dangerouslySetInnerHTML={{ __html: previewBody }} />
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Fill in the form to see preview
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

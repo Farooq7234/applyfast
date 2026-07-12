@@ -39,7 +39,7 @@ export function buildEmailBody(
     .map(p => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
     .join("");
 
-  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#111;">${paragraphs}</div>`;
+  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">${paragraphs}</div>`;
 }
 
 export function buildEmailSubject(
