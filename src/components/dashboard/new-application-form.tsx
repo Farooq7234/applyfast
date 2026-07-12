@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Send, AlertCircle, Sparkles } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  AlertCircle,
+  Sparkles,
+  Eraser,
+} from "lucide-react";
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
 import { Template } from "@prisma/client";
@@ -152,6 +158,7 @@ export function NewApplicationForm({
     watch,
     setValue,
     getValues,
+      reset,
     formState: { errors },
   } = useForm<ApplicationInput>({
     resolver: zodResolver(applicationSchema),
@@ -159,6 +166,29 @@ export function NewApplicationForm({
       templateId: selectedTemplate?.id,
     },
   });
+
+
+  function handleClear() {
+  reset({
+    companyEmail: "",
+    company: "",
+    role: "",
+    recruiterName: "",
+    templateId: selectedTemplate?.id,
+  });
+
+  setAutoFilled({
+    company: false,
+    recruiterName: false,
+  });
+
+  lastAutoValues.current = {
+    company: "",
+    recruiterName: "",
+  };
+
+  setPreview(false);
+}
 
   const watchedValues = watch();
 
@@ -357,23 +387,39 @@ export function NewApplicationForm({
           </CardContent>
         </Card>
 
-        <div className="flex gap-3">
-          <Button type="submit" className="flex-1 gap-2" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            {isPending ? "Sending..." : "Send Application"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setPreview((p) => !p)}
-          >
-            {preview ? "Hide" : "Preview"}
-          </Button>
-        </div>
+     <div className="flex gap-3">
+  <Button
+    type="submit"
+    className="flex-1 gap-2"
+    disabled={isPending}
+  >
+    {isPending ? (
+      <Loader2 className="h-4 w-4 animate-spin" />
+    ) : (
+      <Send className="h-4 w-4" />
+    )}
+    {isPending ? "Sending..." : "Send Application"}
+  </Button>
+
+  <Button
+    type="button"
+    variant="outline"
+    onClick={() => setPreview((p) => !p)}
+  >
+    {preview ? "Hide" : "Preview"}
+  </Button>
+
+  <Button
+    type="button"
+    variant="destructive"
+    onClick={handleClear}
+    disabled={isPending}
+    className="gap-2"
+  >
+    <Eraser className="h-4 w-4" />
+    Clear
+  </Button>
+</div>
       </form>
 
       {/* Preview */}
