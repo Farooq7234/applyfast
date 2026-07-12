@@ -197,7 +197,7 @@ export function RoleCombobox({
         }}
         onKeyDown={handleKeyDown}
         className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors",
+          "flex h-9 w-full border border-input bg-transparent px-3 py-1 text-sm  transition-colors",
           "placeholder:text-muted-foreground",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -210,7 +210,7 @@ export function RoleCombobox({
           ref={listRef}
           role="listbox"
           className={cn(
-            "absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md",
+            "absolute left-0 top-full z-50 mt-1 w-full overflow-hidden border border-border bg-popover text-popover-foreground",
             "max-h-52 overflow-y-auto"
           )}
         >

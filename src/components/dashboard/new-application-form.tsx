@@ -336,7 +336,7 @@ export function NewApplicationForm({
               <div className="flex flex-col gap-1.5">
                 <Label>Email Template</Label>
                 <select
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-9 w-full  border border-input bg-transparent px-3 py-1 text-sm  transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   value={selectedTemplate?.id ?? ""}
                   onChange={(e) => {
                     const id = e.target.value;
@@ -395,7 +395,7 @@ export function NewApplicationForm({
                 </p>
 
                 {previewBody ? (
-                  <div className="rounded-md border bg-background p-4 overflow-auto">
+                  <div className=" border bg-background p-4 overflow-auto">
                     <div dangerouslySetInnerHTML={{ __html: previewBody }} />
                   </div>
                 ) : (
