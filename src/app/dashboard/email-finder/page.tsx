@@ -66,7 +66,7 @@ export default function HunterEmailFinder() {
   }
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 sm:px-0 py-10 space-y-8">
+    <div className="container mx-auto max-w-6xl px-4 py-10">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Email Finder</h1>
         <p className="text-muted-foreground">
@@ -74,7 +74,7 @@ export default function HunterEmailFinder() {
         </p>
       </div>
 
-      <div className="flex gap-3  sm:max-w-2xl">
+      <div className="flex gap-3 mt-5  sm:max-w-2xl">
         <Input
           placeholder="example.com"
           value={domain}
