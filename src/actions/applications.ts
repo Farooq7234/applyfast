@@ -249,3 +249,112 @@ export async function getDashboardStats() {
     clicked,
   };
 }
+
+export async function getApplicationsOverTime() {
+  const session = await requireSession();
+  const userId = session.user.id;
+
+  // Get last 30 days of applications
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+  const applications = await db.application.findMany({
+    where: {
+      userId,
+      createdAt: { gte: thirtyDaysAgo },
+    },
+    select: { createdAt: true, status: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // Aggregate by date
+  const dateMap = new Map<string, { date: string; sent: number; opened: number; clicked: number; failed: number }>();
+
+  // Initialize with zeros for all dates in range
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(thirtyDaysAgo);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dateMap.set(dateStr, { date: dateStr, sent: 0, opened: 0, clicked: 0, failed: 0 });
+  }
+
+  // Populate with actual data
+  applications.forEach(app => {
+    const dateStr = app.createdAt.toISOString().split('T')[0];
+    const entry = dateMap.get(dateStr);
+    if (entry) {
+      if (app.status === "sent") entry.sent++;
+      else if (app.status === "opened") entry.opened++;
+      else if (app.status === "clicked") entry.clicked++;
+      else if (app.status === "failed") entry.failed++;
+      // If delivered, count as sent
+      else if (app.status === "delivered") entry.sent++;
+    }
+  });
+
+  return Array.from(dateMap.values());
+}
+
+export async function getApplicationStatusBreakdown() {
+  const session = await requireSession();
+  const userId = session.user.id;
+
+  const statusCounts = await db.application.groupBy({
+    by: ["status"],
+    where: { userId },
+    _count: { status: true },
+  });
+
+  const statusMap: Record<string, string> = {
+    sent: "Sent",
+    delivered: "Delivered",
+    opened: "Opened",
+    clicked: "Clicked",
+    bounced: "Bounced",
+    complained: "Complained",
+    delivery_delayed: "Delayed",
+    failed: "Failed",
+  };
+
+  return statusCounts.map(item => ({
+    name: statusMap[item.status] || item.status,
+    value: item._count.status,
+  }));
+}
+
+export async function getTopRoles() {
+  const session = await requireSession();
+  const userId = session.user.id;
+
+  const roles = await db.application.groupBy({
+    by: ["role"],
+    where: { userId },
+    _count: { role: true },
+    orderBy: { _count: { role: "desc" } },
+    take: 8,
+  });
+
+  return roles.map(item => ({
+    name: item.role.length > 20 ? item.role.substring(0, 20) + "..." : item.role,
+    count: item._count.role,
+  }));
+}
+
+export async function getTopCompanies() {
+  const session = await requireSession();
+  const userId = session.user.id;
+
+  const companies = await db.application.groupBy({
+    by: ["company"],
+    where: { userId },
+    _count: { company: true },
+    orderBy: { _count: { company: "desc" } },
+    take: 8,
+  });
+
+  return companies.map(item => ({
+    name: item.company.length > 20 ? item.company.substring(0, 20) + "..." : item.company,
+    count: item._count.company,
+  }));
+}

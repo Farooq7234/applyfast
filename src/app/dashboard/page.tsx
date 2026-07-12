@@ -1,4 +1,4 @@
-import { getDashboardStats } from "@/actions/applications";
+import { getDashboardStats, getApplicationsOverTime, getApplicationStatusBreakdown, getTopRoles, getTopCompanies } from "@/actions/applications";
 import { getServerSession } from "@/lib/session";
 import { ensureDefaultTemplate } from "@/actions/templates";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -14,6 +14,10 @@ import {
   MailOpen,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ApplicationsOverTimeChart } from "@/components/dashboard/applications-over-time-chart";
+import { StatusBreakdownChart } from "@/components/dashboard/status-breakdown-chart";
+import { TopRolesChart } from "@/components/dashboard/top-roles-chart";
+import { TopCompaniesChart } from "@/components/dashboard/top-companies-chart";
 
 export default async function DashboardPage() {
   const session = await getServerSession();
@@ -22,7 +26,13 @@ export default async function DashboardPage() {
   // Ensure the user has a default template
   await ensureDefaultTemplate(session.user.id);
 
-  const stats = await getDashboardStats();
+  const [stats, applicationsOverTime, statusBreakdown, topRoles, topCompanies] = await Promise.all([
+    getDashboardStats(),
+    getApplicationsOverTime(),
+    getApplicationStatusBreakdown(),
+    getTopRoles(),
+    getTopCompanies(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -43,7 +53,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Applications"
           value={stats.total}
@@ -89,6 +99,20 @@ export default async function DashboardPage() {
           variant="destructive"
         />
       </div>
+
+      {/* Charts */}
+      {stats.total > 0 && (
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <ApplicationsOverTimeChart data={applicationsOverTime} />
+          </div>
+          <StatusBreakdownChart data={statusBreakdown} />
+          <TopRolesChart data={topRoles} />
+          <div className="md:col-span-2">
+            <TopCompaniesChart data={topCompanies} />
+          </div>
+        </div>
+      )}
 
       {/* Quick action */}
       {stats.total === 0 && (
