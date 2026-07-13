@@ -216,7 +216,7 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
 
       {/* View dialog */}
       <Dialog  open={!!viewApp} onOpenChange={() => setViewApp(null)}>
-        <DialogContent className="w-[720px] max-w-[calc(100%-2rem)]">
+        <DialogContent className="max-w-4xl sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               {viewApp?.role} at {viewApp?.company}
@@ -230,9 +230,10 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Body</p>
-              <pre className="whitespace-pre-wrap rounded-md bg-muted p-3 text-xs leading-relaxed">
-                {viewApp?.body}
-              </pre>
+              <div 
+                className="rounded-md border border-border p-4 text-sm"
+                dangerouslySetInnerHTML={{ __html: viewApp?.body || "" }}
+              />
             </div>
           </div>
         </DialogContent>
