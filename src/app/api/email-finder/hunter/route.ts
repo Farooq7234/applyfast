@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findEmailsByDomain } from "@/lib/services/hunter";
+import { classifyContacts } from "@/lib/email-classifier";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,12 +21,13 @@ export async function POST(req: NextRequest) {
     }
 
     const emails = await findEmailsByDomain(domain);
+    const classifiedEmails = classifyContacts(emails);
 
     return NextResponse.json({
       success: true,
       provider: "hunter",
-      total: emails.length,
-      emails,
+      total: classifiedEmails.length,
+      emails: classifiedEmails,
     });
   } catch (error) {
     return NextResponse.json(

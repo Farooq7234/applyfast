@@ -1,5 +1,6 @@
 import { findEmailsByDomain } from "@/lib/services/snov";
 import { NextRequest, NextResponse } from "next/server";
+import { classifyContacts } from "@/lib/email-classifier";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +18,12 @@ export async function POST(req: NextRequest) {
     }
 
     const emails = await findEmailsByDomain(domain.trim());
+    const classifiedEmails = classifyContacts(emails);
 
     return NextResponse.json({
       success: true,
-      emails,
+      total: classifiedEmails.length,
+      emails: classifiedEmails,
     });
   } catch (error) {
     console.error("Snov Email Finder Error:", error);

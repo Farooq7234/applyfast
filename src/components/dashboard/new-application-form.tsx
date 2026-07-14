@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { applicationSchema, type ApplicationInput } from "@/lib/validations";
-import { createApplication } from "@/actions/applications";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +19,7 @@ import {
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
 import { Template } from "@prisma/client";
+import { useSendApplication } from "@/hooks/use-send-application";
 
 interface NewApplicationFormProps {
   templates: Template[];
@@ -29,6 +28,10 @@ interface NewApplicationFormProps {
     portfolio: string | null;
     resumeUrl: string | null;
   } | null;
+  initialValues?: Partial<ApplicationInput>;
+  showPreview?: boolean;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 // ---- Email parsing helpers ----
@@ -131,13 +134,20 @@ function parseEmail(
 export function NewApplicationForm({
   templates,
   profile,
+  initialValues = {},
+  showPreview = true,
+  onSuccess,
+  onClose,
 }: NewApplicationFormProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
-    templates.find((t) => t.isDefault) ?? templates[0] ?? null,
+    templates.find((t) => t.id === initialValues.templateId) ??
+      templates.find((t) => t.isDefault) ??
+      templates[0] ??
+      null,
   );
   const [preview, setPreview] = useState(false);
+  const { isPending, sendApplication } = useSendApplication();
   const [autoFilled, setAutoFilled] = useState<{
     company: boolean;
     recruiterName: boolean;
@@ -158,37 +168,38 @@ export function NewApplicationForm({
     watch,
     setValue,
     getValues,
-      reset,
+    reset,
     formState: { errors },
   } = useForm<ApplicationInput>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       templateId: selectedTemplate?.id,
+      ...initialValues,
     },
   });
 
 
   function handleClear() {
-  reset({
-    companyEmail: "",
-    company: "",
-    role: "",
-    recruiterName: "",
-    templateId: selectedTemplate?.id,
-  });
+    reset({
+      companyEmail: "",
+      company: "",
+      role: "",
+      recruiterName: "",
+      templateId: selectedTemplate?.id,
+    });
 
-  setAutoFilled({
-    company: false,
-    recruiterName: false,
-  });
+    setAutoFilled({
+      company: false,
+      recruiterName: false,
+    });
 
-  lastAutoValues.current = {
-    company: "",
-    recruiterName: "",
-  };
+    lastAutoValues.current = {
+      company: "",
+      recruiterName: "",
+    };
 
-  setPreview(false);
-}
+    setPreview(false);
+  }
 
   const watchedValues = watch();
 
@@ -241,13 +252,13 @@ export function NewApplicationForm({
     : "";
 
   function onSubmit(data: ApplicationInput) {
-    startTransition(async () => {
-      const result = await createApplication(data);
-      if (result.error) {
-        toast.error(result.error);
+    void sendApplication(data, () => {
+      if (onSuccess) {
+        onSuccess();
         return;
       }
-      toast.success("Application sent!");
+
+      router.push("/dashboard/applications");
     });
   }
 
@@ -277,7 +288,13 @@ export function NewApplicationForm({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-7xl">
+    <div
+      className={
+        showPreview
+          ? "grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2"
+          : "w-full"
+      }
+    >
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Card>
@@ -387,48 +404,60 @@ export function NewApplicationForm({
           </CardContent>
         </Card>
 
-     <div className="flex gap-3">
-  <Button
-    type="submit"
-    className="flex-1 gap-2"
-    disabled={isPending}
-  >
-    {isPending ? (
-      <Loader2 className="h-4 w-4 animate-spin" />
-    ) : (
-      <Send className="h-4 w-4" />
-    )}
-    {isPending ? "Sending..." : "Send Application"}
-  </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            type="submit"
+            className="flex-1 gap-2"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            {isPending ? "Sending..." : "Send Application"}
+          </Button>
 
-  <Button
-    type="button"
-    variant="outline"
-    onClick={() => setPreview((p) => !p)}
-  >
-    {preview ? "Hide" : "Preview"}
-  </Button>
+          {showPreview && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreview((p) => !p)}
+            >
+              {preview ? "Hide" : "Preview"}
+            </Button>
+          )}
 
-  <Button
-    type="button"
-    variant="destructive"
-    onClick={handleClear}
-    disabled={isPending}
-    className="gap-2"
-  >
-    <Eraser className="h-4 w-4" />
-    Clear
-  </Button>
-</div>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleClear}
+            disabled={isPending}
+            className="gap-2"
+          >
+            <Eraser className="h-4 w-4" />
+            Clear
+          </Button>
+          {onClose && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
       </form>
 
       {/* Preview */}
-      {preview && (
+      {showPreview && preview && (
         <div className="flex flex-col gap-3">
           <Card>
-            <CardContent className=" flex flex-col gap-3">
+            <CardContent className="flex flex-col gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
                   Subject
                 </p>
                 <p className="text-sm font-medium">
@@ -436,12 +465,12 @@ export function NewApplicationForm({
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
                   Body
                 </p>
 
                 {previewBody ? (
-                  <div className=" border bg-background p-4 overflow-auto">
+                  <div className="overflow-auto border bg-background p-4">
                     <div dangerouslySetInnerHTML={{ __html: previewBody }} />
                   </div>
                 ) : (
