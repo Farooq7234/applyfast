@@ -100,6 +100,8 @@ export async function updateTemplate(
   });
 
   revalidatePath("/dashboard/templates");
+  revalidatePath("/dashboard/applications/new");
+  revalidatePath("/dashboard/email-finder");
   return { success: true };
 }
 
