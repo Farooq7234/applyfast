@@ -51,9 +51,7 @@ I remain genuinely interested in the opportunity and would be happy to provide a
 Thank you for your time and consideration. I look forward to hearing from you.
 
 Best regards,
-
 {{name}}
-{{email}}
 {{portfolio}}
 `;
 
