@@ -17,9 +17,11 @@ export async function GET(request: Request) {
 
     const pending = await db.application.findMany({
       where: {
-        status: "sent",
         followUpSent: false,
         followUpDate: { not: null, lte: new Date() },
+        status: {
+      not: "bounced",
+    }
       },
       include: { user: true },
       orderBy: { followUpDate: "asc" },
