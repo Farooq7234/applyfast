@@ -20,8 +20,8 @@ export async function GET(request: Request) {
         // followUpSent: false,
         followUpDate: { not: null, lte: new Date() },
         status: {
-      not: "bounced",
-    }
+          not: "bounced",
+        },
       },
       include: { user: true },
       orderBy: { followUpDate: "asc" },
@@ -29,14 +29,19 @@ export async function GET(request: Request) {
     });
 
     if (pending.length === 0) {
-      return NextResponse.json({ processed: 0, succeeded: 0, failed: 0, message: "No follow ups due." });
+      return NextResponse.json({
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        message: "No follow ups due.",
+      });
     }
 
     let succeeded = 0;
     let failed = 0;
 
     await Promise.allSettled(
-      pending.map(async (app:any) => {
+      pending.map(async (app: any) => {
         try {
           if (!app.companyEmail) throw new Error("Missing recipient email");
 
@@ -44,17 +49,12 @@ export async function GET(request: Request) {
 
 I hope you're doing well.
 
-I wanted to follow up on my application for the {{role}} position at {{company}}. 
+Just wanted to follow up on my application for the {{role}} position at {{company}}. I'm still very interested in the opportunity and would love to hear if there are any updates regarding my application.
 
-I know you're likely reviewing many applications, so I just wanted to reiterate my interest in the opportunity.
+For convenience, here's my portfolio again:
+{{portfolio}}
 
-I'm genuinely excited about the possibility of contributing to your team. I build modern web applications using React, Next.js, TypeScript, Node.js, and PostgreSQL, and I'd love the chance to bring those skills to {{company}}.
-
-In case it's helpful, here's my portfolio again:
-
-Portfolio: {{portfolio}}
-
-Thank you for your time and consideration. I look forward to hearing from you.
+Thank you for your time, and I look forward to hearing from you.
 
 Best regards,
 {{name}}
@@ -86,12 +86,15 @@ Best regards,
           failed++;
           console.error("Follow up failed", { applicationId: app.id, error });
         }
-      })
+      }),
     );
 
     return NextResponse.json({ processed: pending.length, succeeded, failed });
   } catch (error) {
     console.error("Cron job failed:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
