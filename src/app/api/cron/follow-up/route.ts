@@ -42,17 +42,23 @@ export async function GET(request: Request) {
 
           const template = `Hi {{recruiter_name}},
 
-I hope you are doing well.
+I hope you're doing well.
 
-I wanted to briefly follow up regarding my application for the {{role}} position at {{company}}.
+I wanted to follow up on my application for the {{role}} position at {{company}}. I know you're likely reviewing many applications, so I just wanted to reiterate my interest in the opportunity.
 
-I remain genuinely interested in the opportunity and would be happy to provide any additional information if helpful.
+I'm genuinely excited about the possibility of contributing to your team. I build modern web applications using React, Next.js, TypeScript, Node.js, and PostgreSQL, and I'd love the chance to bring those skills to {{company}}.
+
+In case it's helpful, here's my portfolio again:
+
+Portfolio: {{portfolio}}
+
+If there's any additional information I can provide, I'd be happy to share it.
 
 Thank you for your time and consideration. I look forward to hearing from you.
 
 Best regards,
+
 {{name}}
-{{portfolio}}
 `;
 
           const html = buildEmailBody(template, {
