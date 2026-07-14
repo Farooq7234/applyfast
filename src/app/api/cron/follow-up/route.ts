@@ -49,7 +49,9 @@ export async function GET(request: Request) {
 
 I hope you're doing well.
 
-Just wanted to follow up on my application for the {{role}} position at {{company}}. I'm still very interested in the opportunity and would love to hear if there are any updates regarding my application.
+Just wanted to follow up on my application for the {{role}} position at {{company}}.
+
+I'm still very interested in the opportunity and would love to hear if there are any updates regarding my application.
 
 For convenience, here's my portfolio again:
 {{portfolio}}
