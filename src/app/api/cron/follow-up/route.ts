@@ -52,9 +52,12 @@ Thank you for your time and consideration. I look forward to hearing from you.
 
 Best regards,
 
-{{name}}`;
+{{name}}
+{{email}}
+{{portfolio}}
+`;
 
-          const text = buildEmailBody(template, {
+          const html = buildEmailBody(template, {
             role: app.role,
             company: app.company,
             recruiterName: app.recruiterName,
@@ -67,7 +70,7 @@ Best regards,
             from: "Umar Farooq <contact@farooqx.in>",
             to: app.companyEmail,
             subject: `Following up: ${app.subject}`,
-            text,
+            html,
           });
 
           await db.application.update({
