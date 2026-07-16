@@ -332,10 +332,8 @@ export function NewApplicationForm({
     void sendApplication(data, () => {
       if (onSuccess) {
         onSuccess();
-        return;
+        handleClear();
       }
-
-      router.push("/dashboard/applications");
     });
   }
 
