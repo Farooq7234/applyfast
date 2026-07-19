@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2,
   Send,
@@ -652,6 +653,44 @@ export function NewApplicationForm({
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+export function NewApplicationFormSkeleton() {
+  return (
+    <div className="grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Form Skeleton */}
+      <div className="flex flex-col gap-4">
+        <Card>
+          <CardContent className="pt-6 flex flex-col gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-1.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <div className="flex flex-wrap gap-3">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </div>
+      {/* Preview Skeleton */}
+      <div className="flex flex-col gap-3">
+        <Card>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-8 w-28" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

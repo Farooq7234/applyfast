@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { deleteApplication, resendApplication } from "@/actions/applications";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -238,6 +239,41 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export function ApplicationsTableSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Search */}
+      <div className="relative">
+        <Skeleton className="h-9 w-full" />
+      </div>
+      {/* Table */}
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex gap-4 px-4 py-3 border-b border-border last:border-0">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
