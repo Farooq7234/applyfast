@@ -35,7 +35,7 @@ export default function OnboardingPage() {
         return;
       }
       toast.success("Profile saved!");
-      router.push("/dashboard/profile");
+      router.push("/profile");
     } catch {
       toast.error("Something went wrong.");
     } finally {
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
               type="button"
               variant="ghost"
               className="w-full text-muted-foreground"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/")}
             >
               Skip for now
             </Button>

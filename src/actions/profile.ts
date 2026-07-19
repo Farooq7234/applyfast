@@ -26,7 +26,7 @@ export async function updateProfile(data: unknown): Promise<{ error?: string; su
     },
   });
 
-  revalidatePath("/dashboard/profile");
+  revalidatePath("/profile");
   return { success: true };
 }
 
@@ -38,7 +38,7 @@ export async function updateResumeUrl(resumeUrl: string): Promise<{ error?: stri
     data: { resumeUrl },
   });
 
-  revalidatePath("/dashboard/profile");
+  revalidatePath("/profile");
   return { success: true };
 }
 

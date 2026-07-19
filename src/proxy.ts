@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 
-const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/api/auth"];
+const PUBLIC_PATHS = ["/welcome", "/sign-in", "/sign-up", "/api/auth"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,13 +21,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check session for protected dashboard routes
- if (pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding")) {
+  // Check if user is logged in
   const sessionCookie = getSessionCookie(request);
-  if (!sessionCookie) {
+  
+  // If user is at / and not logged in, redirect to /welcome
+  if (pathname === "/" && !sessionCookie) {
+    return NextResponse.redirect(new URL("/welcome", request.url));
+  }
+
+  // Check session for all other protected routes
+  const protectedPaths = ["/", "/applications", "/email-finder", "/templates", "/profile", "/settings"];
+  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + "/")) || pathname.startsWith("/onboarding");
+  
+  if (isProtected && !sessionCookie) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
-}
 
   return NextResponse.next();
 }

@@ -351,7 +351,7 @@ export function NewApplicationForm({
               <Button
                 className="mt-3"
                 size="sm"
-                onClick={() => router.push("/dashboard/profile")}
+                onClick={() => router.push("/profile")}
               >
                 Go to Profile
               </Button>

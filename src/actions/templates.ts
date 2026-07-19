@@ -66,7 +66,7 @@ export async function createTemplate(data: unknown): Promise<{ error?: string; i
     },
   });
 
-  revalidatePath("/dashboard/templates");
+  revalidatePath("/templates");
   return { id: template.id };
 }
 
@@ -99,9 +99,9 @@ export async function updateTemplate(
     data: { name, subject, body, isDefault: isDefault ?? existing.isDefault },
   });
 
-  revalidatePath("/dashboard/templates");
-  revalidatePath("/dashboard/applications/new");
-  revalidatePath("/dashboard/email-finder");
+  revalidatePath("/templates");
+  revalidatePath("/applications/new");
+  revalidatePath("/email-finder");
   return { success: true };
 }
 
@@ -118,7 +118,7 @@ export async function deleteTemplate(
 
   await db.template.delete({ where: { id } });
 
-  revalidatePath("/dashboard/templates");
+  revalidatePath("/templates");
   return { success: true };
 }
 
@@ -139,7 +139,7 @@ export async function setDefaultTemplate(
 
   await db.template.update({ where: { id }, data: { isDefault: true } });
 
-  revalidatePath("/dashboard/templates");
+  revalidatePath("/templates");
   return { success: true };
 }
 

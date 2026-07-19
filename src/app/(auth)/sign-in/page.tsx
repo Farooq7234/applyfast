@@ -15,7 +15,7 @@ export default function SignInPage() {
     try {
       await signIn.social({
         provider: "github",
-        callbackURL: "/dashboard",
+        callbackURL: "/",
       });
     } catch {
       toast.error("Something went wrong. Please try again.");

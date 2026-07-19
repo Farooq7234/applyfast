@@ -24,12 +24,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/applications", label: "Applications", icon: SendHorizontal },
-  { href: "/dashboard/email-finder", label: "Email Finder", icon: SearchIcon },
-  { href: "/dashboard/templates", label: "Templates", icon: FileText },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/applications", label: "Applications", icon: SendHorizontal },
+  { href: "/email-finder", label: "Email Finder", icon: SearchIcon },
+  { href: "/templates", label: "Templates", icon: FileText },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 // Labeled theme toggle for sidebar list
@@ -79,8 +79,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
+            item.href === "/"
+              ? pathname === "/"
               : pathname.startsWith(item.href);
 
           return (

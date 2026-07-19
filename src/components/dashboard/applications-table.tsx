@@ -65,7 +65,7 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
     const params = new URLSearchParams();
     if (value) params.set("q", value);
     // reset to page 1 on new search
-    router.push(`/dashboard/applications${value ? `?${params}` : ""}`);
+    router.push(`/applications${value ? `?${params}` : ""}`);
   }
 
   function handleDelete(id: string) {

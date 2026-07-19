@@ -29,7 +29,7 @@ export default async function ApplicationsPage({
             {total} application{total !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link href="/dashboard/applications/new">
+        <Link href="/applications/new">
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Application</span>

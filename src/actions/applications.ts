@@ -90,8 +90,8 @@ export async function createApplication(data: unknown) {
     },
   });
 
-  revalidatePath("/dashboard/applications");
-  revalidatePath("/dashboard");
+  revalidatePath("/applications");
+  revalidatePath("/");
   return { success: true, applicationId: application.id };
 }
 
@@ -158,7 +158,7 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
     data: { status: "sent", createdAt: new Date() , resendEmailId: sendData?.id ?? null,},
   });
 
-  revalidatePath("/dashboard/applications");
+  revalidatePath("/applications");
   return { success: true };
 }
 
@@ -169,8 +169,8 @@ export async function deleteApplication(id: string): Promise<{ error?: string; s
     where: { id, userId: session.user.id },
   });
 
-  revalidatePath("/dashboard/applications");
-  revalidatePath("/dashboard");
+  revalidatePath("/applications");
+  revalidatePath("/");
   return { success: true };
 }
 

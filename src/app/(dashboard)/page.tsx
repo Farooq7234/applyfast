@@ -44,7 +44,7 @@ export default async function DashboardPage() {
             Welcome back, {session.user.name?.split(" ")[0] ?? "there"}
           </p>
         </div>
-        <Link href="/dashboard/applications/new">
+        <Link href="/applications/new">
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
             New Application
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
           <p className="mb-4 text-sm text-muted-foreground">
             Send your first application in under 15 seconds
           </p>
-          <Link href="/dashboard/applications/new">
+          <Link href="/applications/new">
             <Button size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
               New Application

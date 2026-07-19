@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Zap, Clock, Mail, CheckCircle2 } from "lucide-react";
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Nav */}

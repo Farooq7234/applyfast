@@ -15,7 +15,7 @@ function buildHref(page: number, searchQuery?: string) {
   if (searchQuery) params.set("q", searchQuery);
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
-  return `/dashboard/applications${qs ? `?${qs}` : ""}`;
+  return `/applications${qs ? `?${qs}` : ""}`;
 }
 
 export function Pagination({ currentPage, totalPages, searchQuery }: PaginationProps) {
