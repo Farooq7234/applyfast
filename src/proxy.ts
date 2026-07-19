@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
+const AUTH_PATHS = ["/sign-in"];
 
-const PUBLIC_PATHS = ["/welcome", "/sign-in", "/sign-up", "/api/auth"];
+const PROTECTED_PATHS = [
+  "/applications",
+  "/email-finder",
+  "/templates",
+  "/profile",
+  "/settings",
+  "/onboarding",
+];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
-  }
-
-  // Allow static files
+  // Allow Next.js assets
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
@@ -21,19 +24,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if user is logged in
-  const sessionCookie = getSessionCookie(request);
-  
-  // If user is at / and not logged in, redirect to /welcome
-  if (pathname === "/" && !sessionCookie) {
-    return NextResponse.redirect(new URL("/welcome", request.url));
+  // Allow Better Auth API
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
   }
 
-  // Check session for all other protected routes
-  const protectedPaths = ["/", "/applications", "/email-finder", "/templates", "/profile", "/settings"];
-  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + "/")) || pathname.startsWith("/onboarding");
-  
-  if (isProtected && !sessionCookie) {
+  const session = getSessionCookie(request);
+
+  // Logged in users should not access auth pages
+  if (session && AUTH_PATHS.includes(pathname)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Guests can access only "/" and auth pages
+  const isProtected = PROTECTED_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(path + "/")
+  );
+
+  if (!session && isProtected) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 

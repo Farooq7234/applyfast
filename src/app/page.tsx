@@ -1,30 +1,17 @@
-'use client'
+
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Zap, Clock, Mail, CheckCircle2, Flame, Sparkles, BarChart3, Code, User } from "lucide-react";
+import Navbar from "@/components/navbar";
+
 
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Nav */}
-      <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-semibold">ApplyFast</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/sign-in">
-              <Button size="sm">Sign in with GitHub</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
+      <Navbar />
       {/* Hero */}
       <main className="flex flex-1 flex-col">
         <section className="flex flex-col items-center justify-center px-6 py-24 text-center">

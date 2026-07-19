@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: SendHorizontal },
   { href: "/email-finder", label: "Email Finder", icon: SearchIcon },
   { href: "/templates", label: "Templates", icon: FileText },
@@ -79,8 +79,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active =
-            item.href === "/"
-              ? pathname === "/"
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
               : pathname.startsWith(item.href);
 
           return (
