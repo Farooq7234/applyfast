@@ -21,11 +21,13 @@ import {
   Moon,
   FileText,
   SearchIcon,
+  Mails,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: SendHorizontal },
+  { href: "/receive-emails", label: "Emails", icon: Mails  },
   { href: "/email-finder", label: "Email Finder", icon: SearchIcon },
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/profile", label: "Profile", icon: User },
