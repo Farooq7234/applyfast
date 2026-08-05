@@ -44,7 +44,7 @@ export default async function EmailDetailPage({
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl">
       {/* Back */}
       <Link href="/receive-emails">
-        <Button variant="ghost" size="sm" className="gap-1.5 -ml-2">
+        <Button variant="default" size="sm" className="gap-1.5 -ml-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Inbox
         </Button>
