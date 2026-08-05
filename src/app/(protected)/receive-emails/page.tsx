@@ -11,14 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { MoreHorizontal, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const dynamic = "force-dynamic";
 
 async function getEmails(): Promise<ListReceivingEmail[]> {
   const resend = new Resend(process.env.RESEND_API_KEY!);
