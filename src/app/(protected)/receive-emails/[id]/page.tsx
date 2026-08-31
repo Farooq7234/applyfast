@@ -86,7 +86,7 @@ export default async function EmailDetailPage({
               <iframe
                 srcDoc={email.html}
                 sandbox="allow-same-origin"
-                className="w-full min-h-[400px] rounded-md border border-border bg-white"
+                className="w-full min-h-100 rounded-md border border-border bg-white"
                 title="Email content"
               />
             ) : email.text ? (
@@ -122,8 +122,8 @@ export default async function EmailDetailPage({
                         size="sm"
                         className="gap-1.5 h-auto py-1.5"
                       >
-                        <Paperclip className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="max-w-[200px] truncate">
+                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                        <span className="max-w-50 truncate">
                           {att.filename ?? "Attachment"}
                         </span>
                         {att.size > 0 && (
@@ -131,7 +131,7 @@ export default async function EmailDetailPage({
                             ({formatBytes(att.size)})
                           </span>
                         )}
-                        <Download className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                        <Download className="h-3 w-3 shrink-0 text-muted-foreground" />
                       </Button>
                     </a>
                   ))}
@@ -148,7 +148,7 @@ export default async function EmailDetailPage({
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2 text-sm">
-      <span className="w-20 flex-shrink-0 text-muted-foreground">{label}</span>
+      <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
       <span className="font-medium break-all">{value}</span>
     </div>
   );
