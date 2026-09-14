@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { deleteApplication, resendApplication } from "@/actions/applications";
+import {
+  deleteApplication,
+  getApplication,
+  resendApplication,
+} from "@/actions/applications";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +45,12 @@ import {
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Trash2, RefreshCw, Eye, Search, SendHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Application } from "@prisma/client";
+import type { Application } from "@prisma/client";
+
+type ApplicationListItem = Pick<
+  Application,
+  "id" | "company" | "companyEmail" | "role" | "recruiterName" | "status" | "createdAt"
+>;
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   sent: "default",
@@ -50,7 +59,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 };
 
 interface ApplicationsTableProps {
-  applications: Application[];
+  applications: ApplicationListItem[];
   searchQuery?: string;
 }
 
@@ -60,14 +69,24 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
   const [search, setSearch] = useState(searchQuery ?? "");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewApp, setViewApp] = useState<Application | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
 
-  function handleSearch(value: string) {
-    setSearch(value);
-    const params = new URLSearchParams();
-    if (value) params.set("q", value);
-    // reset to page 1 on new search
-    router.push(`/applications${value ? `?${params}` : ""}`);
-  }
+  useEffect(() => {
+    const next = search.trim();
+    const current = (searchQuery ?? "").trim();
+    if (next === current) return;
+
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (next) params.set("q", next);
+      const qs = params.toString();
+      startTransition(() => {
+        router.replace(`/applications${qs ? `?${qs}` : ""}`);
+      });
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [search, searchQuery, router]);
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -92,18 +111,34 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
     });
   }
 
+  async function handleView(id: string) {
+    setViewLoading(true);
+    setViewApp(null);
+    const app = await getApplication(id);
+    setViewLoading(false);
+    if (!app) {
+      toast.error("Application not found");
+      return;
+    }
+    setViewApp(app);
+  }
+
+  const searchInput = (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        placeholder="Search by company or role..."
+        className="pl-9"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
+  );
+
   if (applications.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by company or role..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </div>
+        {searchInput}
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
           <SendHorizontal className="mb-3 h-8 w-8 text-muted-foreground" />
           <h3 className="text-sm font-medium">
@@ -119,18 +154,8 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by company or role..."
-          className="pl-9"
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-      </div>
+      {searchInput}
 
-      {/* Table */}
       <div className="rounded-lg border border-border">
         <Table>
           <TableHeader>
@@ -166,7 +191,7 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
                       <span className="sr-only">Open menu</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setViewApp(app)}>
+                      <DropdownMenuItem onClick={() => handleView(app.id)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
@@ -194,7 +219,6 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
         </Table>
       </div>
 
-      {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -215,28 +239,40 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* View dialog */}
-      <Dialog  open={!!viewApp} onOpenChange={() => setViewApp(null)}>
+      <Dialog
+        open={!!viewApp || viewLoading}
+        onOpenChange={() => {
+          setViewApp(null);
+          setViewLoading(false);
+        }}
+      >
         <DialogContent className="max-w-4xl sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {viewApp?.role} at {viewApp?.company}
+              {viewLoading ? "Loading…" : `${viewApp?.role} at ${viewApp?.company}`}
             </DialogTitle>
-            <DialogDescription>{viewApp?.companyEmail}</DialogDescription>
+            <DialogDescription>{viewApp?.companyEmail ?? " "}</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Subject</p>
-              <p className="text-sm">{viewApp?.subject}</p>
+          {viewLoading ? (
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-40 w-full" />
             </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Body</p>
-              <div 
-                className="rounded-md border border-border p-4 text-sm"
-                dangerouslySetInnerHTML={{ __html: viewApp?.body || "" }}
-              />
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Subject</p>
+                <p className="text-sm">{viewApp?.subject}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Body</p>
+                <div
+                  className="rounded-md border border-border p-4 text-sm"
+                  dangerouslySetInnerHTML={{ __html: viewApp?.body || "" }}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -246,11 +282,10 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
 export function ApplicationsTableSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      {/* Search */}
+      <Skeleton className="h-4 w-32" />
       <div className="relative">
         <Skeleton className="h-9 w-full" />
       </div>
-      {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
           <div className="flex gap-4">

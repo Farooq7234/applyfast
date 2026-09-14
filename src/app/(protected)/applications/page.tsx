@@ -18,7 +18,10 @@ async function ApplicationsContent({
   const { applications, total, totalPages } = await getApplications(q, currentPage);
 
   return (
-    <>
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        {total} application{total !== 1 ? "s" : ""}
+      </p>
       <ApplicationsTable applications={applications} searchQuery={q} />
 
       {totalPages > 1 && (
@@ -28,7 +31,7 @@ async function ApplicationsContent({
           searchQuery={q}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -43,18 +46,10 @@ export default async function ApplicationsPage({
   const { q, page } = await searchParams;
   const currentPage = Math.max(1, parseInt(page ?? "1", 10));
 
-  // To get total for the static header, we call getApplications but maybe we can make a separate call, but for simplicity, let's call it here for total. Or better, let's get total in ApplicationsContent, but since header is static, maybe let's just get total quickly here.
-  const { total } = await getApplications(q, 1);
-
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Applications</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} application{total !== 1 ? "s" : ""}
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold">Applications</h1>
         <Link href="/applications/new">
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />

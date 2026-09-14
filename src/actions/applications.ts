@@ -113,6 +113,15 @@ export async function getApplications(search?: string, page = 1, pageSize = 15) 
   const [applications, total] = await Promise.all([
     db.application.findMany({
       where,
+      select: {
+        id: true,
+        company: true,
+        companyEmail: true,
+        role: true,
+        recruiterName: true,
+        status: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
