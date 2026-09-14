@@ -22,10 +22,11 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  applications Application[]
-  templates    Template[]
-  sessions     Session[]
-  accounts     Account[]
+  applications    Application[]
+  templates       Template[]
+  targetCompanies TargetCompany[]
+  sessions        Session[]
+  accounts        Account[]
 }
 
 model Session {
@@ -116,4 +117,50 @@ model WebhookEvent {
   id        String   @id // svix-id from header
   type      String
   processedAt DateTime @default(now())
+}
+
+enum TargetStatus {
+  RESEARCHING
+  CONTACT_FOUND
+  EMAILED
+  REPLIED
+  INTERVIEWING
+  REJECTED
+  GHOSTED
+}
+
+model TargetCompany {
+  id           String       @id @default(cuid())
+  userId       String
+  name         String
+  website      String
+  careersUrl   String?
+  linkedinUrl  String?
+  oneLiner     String?
+  industry     String?
+  techStack    String[]
+  companySize  String?
+  location     String?
+  fundingStage String?
+  status       TargetStatus @default(RESEARCHING)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts TargetContact[]
+
+  @@unique([userId, website])
+  @@index([userId, status])
+}
+
+model TargetContact {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     TargetCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  role        String?
+  email       String?
+  linkedinUrl String?
+  notes       String?
+  createdAt   DateTime @default(now())
 }

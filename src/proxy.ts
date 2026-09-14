@@ -5,6 +5,7 @@ const AUTH_PATHS = ["/sign-in"];
 
 const PROTECTED_PATHS = [
   "/applications",
+  "/targets",
   "/email-finder",
   "/templates",
   "/profile",

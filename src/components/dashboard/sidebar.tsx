@@ -22,11 +22,13 @@ import {
   FileText,
   SearchIcon,
   Mails,
+  Building2,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: SendHorizontal },
+  { href: "/targets", label: "Targets", icon: Building2 },
   { href: "/receive-emails", label: "Emails", icon: Mails  },
   { href: "/email-finder", label: "Email Finder", icon: SearchIcon },
   { href: "/templates", label: "Templates", icon: FileText },
@@ -161,12 +163,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* ── Mobile drawer backdrop ── */}
+      {/* ── Mobile drawer backdrop (visual only — does not close) ── */}
       {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 bg-black/50"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 z-50 bg-black/50" />
       )}
 
       {/* ── Mobile drawer panel ── */}
