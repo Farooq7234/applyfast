@@ -93,7 +93,7 @@ export function TargetsBoard({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((company) => (
             <TargetCard
               key={company.id}
