@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { buildEmailBody, getResend } from "@/lib/email";
+import { buildEmailBody, getResend, getResendFrom } from "@/lib/email";
 
 export async function GET(request: Request) {
   try {
@@ -72,7 +72,7 @@ Best regards,
           });
 
           await getResend().emails.send({
-            from: "Umar Farooq <contact@farooqx.in>",
+            from: getResendFrom(),
             to: app.companyEmail,
             subject: `Following up: ${app.subject}`,
             html,

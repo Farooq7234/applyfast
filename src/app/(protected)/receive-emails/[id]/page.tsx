@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ReplyComposer } from "@/components/inbox/reply-composer";
 
 async function getEmail(id: string) {
   const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -139,6 +140,9 @@ export default async function EmailDetailPage({
               </div>
             </>
           )}
+
+          <Separator />
+          <ReplyComposer receivedEmailId={id} />
         </CardContent>
       </Card>
     </div>

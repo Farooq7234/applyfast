@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { applicationSchema } from "@/lib/validations";
 import { requireSession } from "@/lib/session";
-import { buildEmailBody, buildEmailSubject, getResend } from "@/lib/email";
+import { buildEmailBody, buildEmailSubject, getResend, getResendFrom } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 
 export async function createApplication(data: unknown) {
@@ -51,7 +51,7 @@ export async function createApplication(data: unknown) {
  const html = buildEmailBody(templateBody, vars);
 
   const {data:sendData, error: sendError } = await getResend().emails.send({
-    from: "Umar Farooq <contact@farooqx.in>",
+    from: getResendFrom(),
     to: companyEmail,
     subject,
     html,
@@ -151,7 +151,7 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
   if (!user) return { error: "User not found" };
 
   const {data:sendData, error: sendError } = await getResend().emails.send({
-    from: "Umar Farooq <contact@farooqx.in>",
+    from: getResendFrom(),
     to: application.companyEmail,
     subject: application.subject,
     html: application.body,
