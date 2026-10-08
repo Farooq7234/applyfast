@@ -91,7 +91,7 @@ export default function LandingPage() {
             <Zap className="h-3 w-3" />
             Less busywork. More thoughtful applications.
           </div>
-          <h1 className="max-w-3xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">
+          <h1 className="sm:max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">
             Your job search deserves more than another spreadsheet
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">

@@ -35,7 +35,7 @@ export default function Navbar() {
             </>
           ) : (
             <Button size="sm">
-              <Link href="/sign-in">Sign in with GitHub</Link>
+              <Link href="/sign-in">Sign in</Link>
             </Button>
           )}
         </div>

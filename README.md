@@ -27,9 +27,16 @@ Copy `.env.local` and fill in your values:
 DATABASE_URL="postgresql://..."         # Neon connection string
 BETTER_AUTH_SECRET="..."                # Random 32+ char secret
 BETTER_AUTH_URL="http://localhost:3000"
+GITHUB_CLIENT_ID="..."                  # GitHub OAuth app credentials
+GITHUB_CLIENT_SECRET="..."
+GOOGLE_CLIENT_ID="..."                  # Google OAuth client credentials
+GOOGLE_CLIENT_SECRET="..."
 RESEND_API_KEY="re_..."                 # From resend.com
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
+
+For Google sign-in, configure the OAuth client's authorized redirect URI as
+`<BETTER_AUTH_URL>/api/auth/callback/google` in Google Cloud Console.
 
 ### 3. Run database migrations
 
