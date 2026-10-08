@@ -24,6 +24,7 @@ import {
   Mails,
   Building2,
 } from "lucide-react";
+import { Button } from "../ui/button";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -152,6 +153,9 @@ export function Sidebar() {
           <span className="text-sm font-semibold tracking-tight">ApplyFast</span>
         </div>
         <div className="flex items-center gap-1">
+           <Button size="sm" className="md:hidden">
+            <Link href="/applications/new">New</Link>
+          </Button>
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(true)}

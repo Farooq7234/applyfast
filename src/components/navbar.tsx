@@ -19,10 +19,8 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-        {/* let's add button to create new application button for only mobile  */}
-          <Button size="sm" className="md:hidden">
-            <Link href="/applications/new">New Application</Link>
-          </Button>
+   
+         
           {isPending ? null : session ? (
             <>
               <Button size="sm">

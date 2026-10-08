@@ -87,11 +87,11 @@ export default function LandingPage() {
       <main className="flex flex-1 flex-col">
         <section className="relative flex flex-col items-center overflow-hidden px-6 pb-20 pt-24 text-center sm:pb-28 sm:pt-32">
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-80 max-w-4xl rounded-full bg-primary/5 blur-3xl" />
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs text-muted-foreground">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-[10px] text-muted-foreground">
             <Zap className="h-3 w-3" />
             Less busywork. More thoughtful applications.
           </div>
-          <h1 className="sm:max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">
+          <h1 className="sm:max-w-4xl text-balance text-3xl font-bold tracking-tight sm:text-6xl">
             Your job search deserves more than another spreadsheet
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
@@ -99,7 +99,7 @@ export default function LandingPage() {
             keep every opportunity organized. ApplyFast brings the moving parts
             of your job search together in one place.
           </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-8 justify-center gap-3 flex flex-wrap sm:flex-nowrap">
             <Link href="/sign-in">
               <Button size="lg" className="gap-2">
                 Start applying faster
