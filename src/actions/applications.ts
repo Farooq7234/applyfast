@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { applicationSchema } from "@/lib/validations";
+import { applicationSchema, batchApplicationSchema } from "@/lib/validations";
 import { requireSession } from "@/lib/session";
 import { buildEmailBody, buildEmailSubject, getResend, getResendFrom } from "@/lib/email";
 import { revalidatePath } from "next/cache";
@@ -93,6 +93,142 @@ export async function createApplication(data: unknown) {
   revalidatePath("/applications");
   revalidatePath("/");
   return { success: true, applicationId: application.id };
+}
+
+export async function createApplicationsBatch(data: unknown) {
+  const session = await requireSession();
+  const parsed = batchApplicationSchema.safeParse(data);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { company, role, recipients, templateId, requestId } = parsed.data;
+  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  if (!user) return { error: "User not found" };
+  if (!user.resumeUrl) {
+    return { error: "Please add your resume URL in your profile first" };
+  }
+
+  const template = templateId
+    ? await db.template.findFirst({
+        where: { id: templateId, userId: session.user.id },
+      })
+    : await db.template.findFirst({
+        where: { userId: session.user.id, isDefault: true },
+      });
+
+  if (!template) {
+    return {
+      error: templateId ? "Template not found" : "No default template found",
+    };
+  }
+
+  const renderedEmails = recipients.map((recipient) => {
+    const subject = buildEmailSubject(template.subject, role, company);
+    const body = buildEmailBody(template.body, {
+      role,
+      company,
+      recruiterName: recipient.recruiterName || "team",
+      portfolio: user.portfolio,
+      resumeUrl: user.resumeUrl,
+      name: user.name,
+    });
+
+    return { recipient, subject, body };
+  });
+
+  const messages = renderedEmails.map(({ recipient, subject, body }) => ({
+    from: getResendFrom(),
+    to: recipient.companyEmail,
+    subject,
+    html: body,
+  }));
+
+  let batchResponse;
+  try {
+    batchResponse = await getResend().batch.send(messages, {
+      idempotencyKey: requestId,
+      batchValidation: "permissive",
+    });
+  } catch (error) {
+    console.error("[Resend] batch request outcome is unknown:", error);
+    return {
+      error:
+        "Resend did not confirm the batch outcome. Check your Resend dashboard before retrying to avoid duplicate emails.",
+    };
+  }
+
+  const providerError = batchResponse.error;
+  const providerItems = batchResponse.data?.data ?? [];
+  const itemErrors = new Map(
+    (batchResponse.data?.errors ?? []).map((item) => [item.index, item.message]),
+  );
+
+  const results = recipients.map((_, index) => {
+    if (providerError) {
+      return { index, status: "failed" as const, error: providerError.message };
+    }
+
+    const itemError = itemErrors.get(index);
+    if (itemError) {
+      return { index, status: "failed" as const, error: itemError };
+    }
+
+    if (!providerItems[index]?.id) {
+      return {
+        index,
+        status: "failed" as const,
+        error: "Resend did not return an email ID for this recipient.",
+      };
+    }
+
+    return { index, status: "sent" as const };
+  });
+
+  if (providerError) {
+    console.error("[Resend] batch send failed:", providerError);
+  }
+
+  const applicationRows = renderedEmails.map(
+    ({ recipient, subject, body }, index) => {
+      const result = results[index];
+
+      return {
+        userId: session.user.id,
+        company,
+        companyEmail: recipient.companyEmail,
+        role,
+        recruiterName: recipient.recruiterName || null,
+        subject,
+        body,
+        resendEmailId:
+          result.status === "sent" ? providerItems[index]?.id ?? null : null,
+        status: result.status,
+        followUpDate:
+          result.status === "sent"
+            ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+            : null,
+      };
+    },
+  );
+
+  try {
+    await db.application.createMany({ data: applicationRows });
+  } catch (error) {
+    console.error("[Applications] failed to save batch results:", error);
+    return {
+      error:
+        (providerError
+          ? "Resend rejected the batch, but its failed application records could not be saved."
+          : "The batch was submitted to Resend, but its application records could not be saved.") +
+        " Check the application history and Resend dashboard before retrying.",
+    };
+  }
+
+  revalidatePath("/applications");
+  revalidatePath("/");
+  return { results };
 }
 
 export async function getApplications(search?: string, page = 1, pageSize = 15) {

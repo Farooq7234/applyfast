@@ -16,8 +16,40 @@ export const applicationSchema = z.object({
   templateId: z.string().optional(),
 });
 
+export const batchApplicationSchema = z
+  .object({
+    company: z.string().trim().min(1, "Company name is required"),
+    role: z.string().trim().min(1, "Role is required"),
+    templateId: z.string().optional(),
+    requestId: z.string().uuid("Invalid batch request"),
+    recipients: z
+      .array(
+        z.object({
+          companyEmail: z.string().trim().email("Enter a valid recipient email"),
+          recruiterName: z.string().trim().optional(),
+        }),
+      )
+      .min(1, "Add at least one recipient")
+      .max(100, "Resend allows up to 100 emails per batch"),
+  })
+  .superRefine((data, context) => {
+    const seenEmails = new Set<string>();
+    data.recipients.forEach((recipient, index) => {
+      const normalizedEmail = recipient.companyEmail.toLowerCase();
+      if (seenEmails.has(normalizedEmail)) {
+        context.addIssue({
+          code: "custom",
+          message: "Each recipient email must be unique",
+          path: ["recipients", index, "companyEmail"],
+        });
+      }
+      seenEmails.add(normalizedEmail);
+    });
+  });
+
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ApplicationInput = z.infer<typeof applicationSchema>;
+export type BatchApplicationInput = z.infer<typeof batchApplicationSchema>;
 
 export const TARGET_STATUSES = [
   "RESEARCHING",

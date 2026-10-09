@@ -293,6 +293,7 @@ export function EmailFinderClient({
               templates={templates}
               profile={profile}
               showPreview={false}
+              allowBatch={false}
               initialValues={{
                 companyEmail: selectedEmail.email,
                 company:

@@ -30,7 +30,7 @@ export function plainTextToEmailHtml(text: string): string {
     .map((p) => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
     .join("");
 
-  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">${paragraphs}</div>`;
+  return `<div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.5">${paragraphs}</div>`;
 }
 
 export function replySubject(originalSubject: string | null | undefined): string {
@@ -53,7 +53,12 @@ export function buildEmailBody(
 ): string {
   const greeting = vars.recruiterName ? `Hi ${vars.recruiterName},` : "Hi,";
 
-  const plain = template
+  const normalizedTemplate = template.replace(
+    /(<body\b[^>]*\bstyle\s*=\s*["'][^"']*)font-size\s*:\s*16px/gi,
+    "$1font-size:14px",
+  );
+
+  const plain = normalizedTemplate
     .replace(/\r\n/g, "\n")
     .replace(/Hi \{\{recruiter_name\}\},/g, greeting)
     .replace(/\{\{recruiter_name\}\}/g, vars.recruiterName ?? "")
@@ -70,7 +75,7 @@ export function buildEmailBody(
     .map(p => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
     .join("");
 
-  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">${paragraphs}</div>`;
+  return `<div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.5">${paragraphs}</div>`;
 }
 
 export function buildEmailSubject(
@@ -93,7 +98,7 @@ export const TEMPLATE_HIRING_SUBJECT =
 export const TEMPLATE_HIRING_BODY = `
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial, Helvetica, sans-serif; font-size:16px; line-height:1.6; color:#222;">
+<body style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#222;">
   <p>Hi {{recruiter_name}},</p>
 
   <p>I came across your opening for the <strong>{{role}}</strong> role and wanted to reach out.</p>
@@ -140,7 +145,7 @@ export const TEMPLATE_COLD_SUBJECT = "Would Love to Build With Your Team";
 export const TEMPLATE_COLD_BODY = `
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial, Helvetica, sans-serif; font-size:16px; line-height:1.6; color:#222;">
+<body style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#222;">
   <p>Hi {{recruiter_name}},</p>
 
   <p>

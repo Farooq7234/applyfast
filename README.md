@@ -56,7 +56,7 @@ App runs at [http://localhost:3000](http://localhost:3000)
 
 - **Auth** — Sign up, sign in, sign out with Better Auth
 - **Profile** — Set name, portfolio, LinkedIn, GitHub, resume URL once
-- **New Application** — Fill company/email/role, send email in one click
+- **New Application** — Send one application or batch up to 100 separate, personalized emails to contacts at the same company; inferred greetings are editable
 - **Applications table** — View, resend, delete all applications with search
 - **Email templates** — Default template with `{{role}}`, `{{company}}`, `{{name}}` etc.
 - **Dashboard** — Stats cards (total, sent today, failed, pending follow-ups)
