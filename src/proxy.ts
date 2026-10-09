@@ -37,10 +37,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Guests can access only "/" and auth pages
-  const isProtected = PROTECTED_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(path + "/")
-  );
+  // Guests can access only auth pages
+
+  const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 
   if (!session && isProtected) {
     return NextResponse.redirect(new URL("/sign-in", request.url));

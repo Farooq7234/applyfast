@@ -198,7 +198,6 @@ export function NewApplicationForm({
     },
   });
 
-
   function handleClear() {
     reset({
       companyEmail: "",
@@ -263,7 +262,9 @@ export function NewApplicationForm({
   }
 
   function insertVariable(textareaId: string, token: string) {
-    const textarea = document.getElementById(textareaId) as HTMLTextAreaElement | null;
+    const textarea = document.getElementById(
+      textareaId,
+    ) as HTMLTextAreaElement | null;
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -307,8 +308,12 @@ export function NewApplicationForm({
     }
   }
 
-  const activeTemplateBody = isEditingTemplate ? editingBody : (selectedTemplate?.body ?? "");
-  const activeTemplateSubject = isEditingTemplate ? editingSubject : (selectedTemplate?.subject ?? "");
+  const activeTemplateBody = isEditingTemplate
+    ? editingBody
+    : (selectedTemplate?.body ?? "");
+  const activeTemplateSubject = isEditingTemplate
+    ? editingSubject
+    : (selectedTemplate?.subject ?? "");
 
   const previewBody = selectedTemplate
     ? buildEmailBody(activeTemplateBody, {
@@ -481,11 +486,7 @@ export function NewApplicationForm({
         </Card>
 
         <div className="flex flex-wrap gap-3">
-          <Button
-            type="submit"
-            className="flex-1 gap-2"
-            disabled={isPending}
-          >
+          <Button type="submit" className="flex-1 gap-2" disabled={isPending}>
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -494,6 +495,53 @@ export function NewApplicationForm({
             {isPending ? "Sending..." : "Send Application"}
           </Button>
 
+          {/* button to support the sending the application through gmail  */}
+
+          <Button
+            type="button"
+            className="flex-1 gap-2"
+            onClick={() => {
+              const recipient = watchedValues.companyEmail?.trim();
+
+              if (!recipient) {
+                toast.error("Please enter the company email address.");
+                return;
+              }
+
+              const subject = previewSubject || "";
+
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = previewBody;
+
+              // Preserve paragraph and line breaks
+              tempDiv.querySelectorAll("br").forEach((br) => {
+                br.replaceWith("\n");
+              });
+
+              tempDiv
+                .querySelectorAll("p, div, li, h1, h2, h3")
+                .forEach((el) => {
+                  el.prepend("\n");
+                  el.append("\n");
+                });
+
+              const body = (tempDiv.innerText || tempDiv.textContent || "")
+                .replace(/\n[ \t]*\n[ \t]*\n/g, "\n\n")
+                .trim();
+
+              const gmailUrl = new URL("https://mail.google.com/mail/");
+              gmailUrl.searchParams.set("view", "cm");
+              gmailUrl.searchParams.set("fs", "1");
+              gmailUrl.searchParams.set("to", recipient);
+              gmailUrl.searchParams.set("su", subject);
+              gmailUrl.searchParams.set("body", body);
+
+              window.open(gmailUrl.toString(), "_blank", "noopener,noreferrer");
+            }}
+          >
+            <Send className="h-4 w-4" />
+            Send via Gmail
+          </Button>
           {showPreview && (
             <Button
               type="button"
@@ -561,7 +609,9 @@ export function NewApplicationForm({
                         <button
                           key={v}
                           type="button"
-                          onClick={() => insertVariable("template-body-input", v)}
+                          onClick={() =>
+                            insertVariable("template-body-input", v)
+                          }
                           className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-mono hover:bg-secondary transition-colors"
                         >
                           {v}
@@ -639,7 +689,9 @@ export function NewApplicationForm({
 
                     {previewBody ? (
                       <div className="overflow-auto border bg-background p-4">
-                        <div dangerouslySetInnerHTML={{ __html: previewBody }} />
+                        <div
+                          dangerouslySetInnerHTML={{ __html: previewBody }}
+                        />
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
