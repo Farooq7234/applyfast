@@ -1,51 +1,49 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { buildEmailBody, getResend, getResendFrom } from "@/lib/email";
+import { processDailyOutreach } from "@/lib/outreach-service";
 
-export async function GET(request: Request) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    const isVercelCron = request.headers.get("x-vercel-cron") === "1";
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
-    if (
-      !isVercelCron &&
-      process.env.CRON_SECRET &&
-      authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+function hasValidCronAuthorization(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  const authorization = request.headers.get("authorization") ?? "";
+  if (!secret) return false;
 
-    const pending = await db.application.findMany({
-      where: {
-        followUpSent: false,
-        followUpDate: { not: null, lte: new Date() },
-        status: {
-          not: "bounced",
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const received = Buffer.from(authorization);
+  return received.length === expected.length && timingSafeEqual(received, expected);
+}
+
+async function processDueFollowUps() {
+  const pending = await db.application.findMany({
+    where: {
+      followUpSent: false,
+      followUpDate: { not: null, lte: new Date() },
+      status: { not: "bounced" },
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          portfolio: true,
+          resumeUrl: true,
         },
       },
-      include: { user: true },
-      orderBy: { followUpDate: "asc" },
-      take: 25,
-    });
+    },
+    orderBy: { followUpDate: "asc" },
+    take: 25,
+  });
 
-    if (pending.length === 0) {
-      return NextResponse.json({
-        processed: 0,
-        succeeded: 0,
-        failed: 0,
-        message: "No follow ups due.",
-      });
-    }
-
-    let succeeded = 0;
-    let failed = 0;
-
-    await Promise.allSettled(
-      pending.map(async (app: any) => {
-        try {
-          if (!app.companyEmail) throw new Error("Missing recipient email");
-
-          const template = `Hi {{recruiter_name}},
+  let succeeded = 0;
+  let failed = 0;
+  await Promise.allSettled(
+    pending.map(async (application) => {
+      try {
+        if (!application.companyEmail) throw new Error("Missing recipient email");
+        const template = `Hi {{recruiter_name}},
 
 I hope you're doing well.
 
@@ -61,41 +59,62 @@ Thank you for your time, and I look forward to hearing from you.
 Best regards,
 {{name}}
 `;
+        const html = buildEmailBody(template, {
+          role: application.role,
+          company: application.company,
+          recruiterName: application.recruiterName,
+          portfolio: application.user.portfolio,
+          resumeUrl: application.user.resumeUrl,
+          name: application.user.name,
+        });
+        const { error } = await getResend().emails.send({
+          from: getResendFrom(),
+          to: application.companyEmail,
+          subject: `Following up: ${application.subject}`,
+          html,
+        });
+        if (error) throw new Error(error.message);
 
-          const html = buildEmailBody(template, {
-            role: app.role,
-            company: app.company,
-            recruiterName: app.recruiterName,
-            portfolio: app.user.portfolio,
-            resumeUrl: app.user.resumeUrl,
-            name: app.user.name,
-          });
+        await db.application.update({
+          where: { id: application.id },
+          data: { followUpSent: true },
+        });
+        succeeded++;
+      } catch (error) {
+        failed++;
+        console.error("Follow up failed", { applicationId: application.id, error });
+      }
+    }),
+  );
+  return { processed: pending.length, succeeded, failed };
+}
 
-          await getResend().emails.send({
-            from: getResendFrom(),
-            to: app.companyEmail,
-            subject: `Following up: ${app.subject}`,
-            html,
-          });
-
-          await db.application.update({
-            where: { id: app.id },
-            data: { followUpSent: true },
-          });
-
-          succeeded++;
-        } catch (error) {
-          failed++;
-          console.error("Follow up failed", { applicationId: app.id, error });
-        }
-      }),
-    );
-
-    return NextResponse.json({ processed: pending.length, succeeded, failed });
-  } catch (error) {
-    console.error("Cron job failed:", error);
+export async function GET(request: Request) {
+  if (!process.env.CRON_SECRET) {
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Cron authentication is not configured." },
+      { status: 503 },
+    );
+  }
+  if (!hasValidCronAuthorization(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let followUps: Awaited<ReturnType<typeof processDueFollowUps>>;
+  try {
+    followUps = await processDueFollowUps();
+  } catch (error) {
+    console.error("[Cron] Follow-up processing failed.", error);
+    followUps = { processed: 0, succeeded: 0, failed: 1 };
+  }
+
+  try {
+    const outreach = await processDailyOutreach();
+    return NextResponse.json({ followUps, outreach });
+  } catch (error) {
+    console.error("[Cron] Daily outreach processing failed.", error);
+    return NextResponse.json(
+      { followUps, error: "Daily outreach processing failed." },
       { status: 500 },
     );
   }

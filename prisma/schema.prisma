@@ -22,11 +22,16 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  applications    Application[]
-  templates       Template[]
-  targetCompanies TargetCompany[]
-  sessions        Session[]
-  accounts        Account[]
+  applications       Application[]
+  templates          Template[]
+  targetCompanies    TargetCompany[]
+  outreachCampaign   OutreachCampaign?
+  outreachRecipients OutreachRecipient[]
+  outreachAttempts   OutreachSendAttempt[]
+  outreachDailyUsage OutreachDailyUsage[]
+  outreachReports    OutreachDailyReport[]
+  sessions           Session[]
+  accounts           Account[]
 }
 
 model Session {
@@ -79,14 +84,15 @@ model Application {
   role          String
   recruiterName String?
   subject       String
-  resendEmailId  String?  @unique // Resend's email ID, set when sent
+  resendEmailId String?           @unique // Resend's email ID, set when sent
   body          String
   status        ApplicationStatus @default(sent)
   followUpDate  DateTime?
   followUpSent  Boolean           @default(false)
   createdAt     DateTime          @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outreachRecipients OutreachRecipient[]
 }
 
 model Template {
@@ -112,10 +118,140 @@ enum ApplicationStatus {
   failed
 }
 
+enum OutreachRecipientStatus {
+  PENDING
+  CLAIMED
+  ACCEPTED
+  DELIVERED
+  FAILED
+  UNKNOWN
+  SKIPPED
+}
+
+enum OutreachAttemptStatus {
+  AUTHORIZED
+  ACCEPTED
+  DELIVERED
+  FAILED
+  UNKNOWN
+}
+
+enum OutreachReportStatus {
+  PENDING
+  SENDING
+  ACCEPTED
+  DELIVERED
+  FAILED
+  UNKNOWN
+}
+
+model OutreachCampaign {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients OutreachRecipient[]
+  attempts   OutreachSendAttempt[]
+  reports    OutreachDailyReport[]
+}
+
+model OutreachRecipient {
+  id                  String                  @id @default(cuid())
+  campaignId          String
+  userId              String
+  sourceApplicationId String?
+  company             String
+  companyEmail        String
+  normalizedEmail     String
+  recruiterName       String?
+  status              OutreachRecipientStatus @default(PENDING)
+  attemptCount        Int                     @default(0)
+  claimedAt           DateTime?
+  lastAttemptAt       DateTime?
+  lastError           String?
+  skipReason          String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  campaign          OutreachCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceApplication Application?          @relation(fields: [sourceApplicationId], references: [id], onDelete: SetNull)
+  attempts          OutreachSendAttempt[]
+
+  @@unique([campaignId, normalizedEmail])
+  @@index([userId, status, createdAt])
+  @@index([campaignId, status, createdAt])
+}
+
+model OutreachSendAttempt {
+  id                String                @id @default(cuid())
+  campaignId        String
+  recipientId       String
+  userId            String
+  usageDate         DateTime              @db.Date
+  status            OutreachAttemptStatus @default(AUTHORIZED)
+  templateId        String
+  templateVersion   String
+  templateName      String
+  subject           String
+  body              String
+  providerMessageId String?               @unique
+  failureReason     String?
+  authorizedAt      DateTime              @default(now())
+  completedAt       DateTime?
+
+  campaign  OutreachCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient OutreachRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usageDate])
+  @@index([recipientId, authorizedAt])
+  @@index([status, authorizedAt])
+}
+
+model OutreachDailyUsage {
+  userId             String
+  usageDate          DateTime @db.Date
+  authorizedAttempts Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, usageDate])
+  @@index([usageDate])
+}
+
+model OutreachDailyReport {
+  id                String               @id @default(cuid())
+  campaignId        String
+  userId            String
+  reportDate        DateTime             @db.Date
+  status            OutreachReportStatus @default(PENDING)
+  summary           String?
+  notificationEmail String
+  idempotencyKey    String?              @unique
+  providerMessageId String?              @unique
+  attemptCount      Int                  @default(0)
+  failureReason     String?
+  lastAttemptAt     DateTime?
+  acceptedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  campaign OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reportDate])
+  @@index([status, reportDate])
+}
+
 // idempotency table so retried webhooks don't reprocess
 model WebhookEvent {
-  id        String   @id // svix-id from header
-  type      String
+  id          String   @id // svix-id from header
+  type        String
   processedAt DateTime @default(now())
 }
 
@@ -154,7 +290,7 @@ model TargetCompany {
 }
 
 model TargetContact {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   companyId   String
   company     TargetCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name        String
@@ -162,5 +298,5 @@ model TargetContact {
   email       String?
   linkedinUrl String?
   notes       String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime      @default(now())
 }

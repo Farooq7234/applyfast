@@ -27,13 +27,17 @@ export function plainTextToEmailHtml(text: string): string {
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
+    .map(
+      (p) => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`,
+    )
     .join("");
 
   return `<div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.5">${paragraphs}</div>`;
 }
 
-export function replySubject(originalSubject: string | null | undefined): string {
+export function replySubject(
+  originalSubject: string | null | undefined,
+): string {
   const subject = originalSubject?.trim() || "";
   if (!subject) return "Re:";
   if (/^re:\s/i.test(subject) || /^re:$/i.test(subject)) return subject;
@@ -49,7 +53,7 @@ export function buildEmailBody(
     portfolio?: string | null;
     resumeUrl?: string | null;
     name: string;
-  }
+  },
 ): string {
   const greeting = vars.recruiterName ? `Hi ${vars.recruiterName},` : "Hi,";
 
@@ -65,14 +69,22 @@ export function buildEmailBody(
     .replace(/\{\{role\}\}/g, vars.role)
     .replace(/\{\{company\}\}/g, vars.company)
     .replace(/\{\{name\}\}/g, vars.name)
-    .replace(/\{\{portfolio\}\}/g, vars.portfolio ? `<a href="${vars.portfolio}">${vars.portfolio}</a>` : "")
-    .replace(/\{\{resume\}\}/g, vars.resumeUrl ? `<a href="${vars.resumeUrl}">${vars.resumeUrl}</a>` : "");
+    .replace(
+      /\{\{portfolio\}\}/g,
+      vars.portfolio ? `<a href="${vars.portfolio}">${vars.portfolio}</a>` : "",
+    )
+    .replace(
+      /\{\{resume\}\}/g,
+      vars.resumeUrl ? `<a href="${vars.resumeUrl}">${vars.resumeUrl}</a>` : "",
+    );
 
   const paragraphs = plain
     .split(/\n\s*\n/)
-    .map(p => p.trim())
+    .map((p) => p.trim())
     .filter(Boolean)
-    .map(p => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`)
+    .map(
+      (p) => `<p style="margin:0 0 16px 0;">${p.split("\n").join("<br>")}</p>`,
+    )
     .join("");
 
   return `<div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.5">${paragraphs}</div>`;
@@ -81,7 +93,7 @@ export function buildEmailBody(
 export function buildEmailSubject(
   template: string,
   role: string,
-  company?: string | null
+  company?: string | null,
 ): string {
   return template
     .replace(/\{\{role\}\}/g, role)
@@ -140,52 +152,70 @@ export const TEMPLATE_HIRING_BODY = `
 
 // Template 2: Company is NOT actively hiring (cold outreach)
 export const TEMPLATE_COLD_NAME = "Cold Outreach";
-export const TEMPLATE_COLD_SUBJECT = "Would Love to Build With Your Team";
+export const TEMPLATE_COLD_SUBJECT = `Excited to Explore Engineering Opportunities at {{company}}`;
 
 export const TEMPLATE_COLD_BODY = `
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#222;">
+<body style="margin:0; padding:0; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:1.7; color:#222;">
+
+  <p style="margin-bottom:20px;">
+    <strong>TL;DR:</strong> I am passionate about the work {{company}} is doing. I have hands-on experience building full stack applications and would love to contribute to a focused team building great products.
+  </p>
+
   <p>Hi {{recruiter_name}},</p>
 
   <p>
-    I know you may not have an active opening right now, but I wanted to reach
-    out anyway.
+    I came across {{company}} and was impressed by the products your team is building and the way you are building them. I am reaching out to express my interest in any open engineering positions on your team.
   </p>
 
-  <p><strong>Resumes tell you what someone knows. Projects tell you how they think.</strong></p>
+  <p><strong>Here are a few of my recent projects:</strong></p>
 
-  <p>Before anything else, I would love for you to take a quick look at my work:</p>
+  <ul style="padding-left:20px; margin:12px 0 20px;">
+    <li style="margin-bottom:12px;">
+      <strong>
+        <a href="https://applyfast.farooqx.in" style="color:#2563eb; text-decoration:none;">ApplyFast</a>
+      </strong>
+      <br>
+      A job application tracker that sends outreach emails and tracks delivery, opens, clicks and replies. Built with Next.js, Prisma and Resend.
+    </li>
+
+    <li style="margin-bottom:12px;">
+      <strong>
+        <a href="https://typefast-omega.vercel.app" style="color:#2563eb; text-decoration:none;">TypeFast</a>
+      </strong>
+      <br>
+      A real time multiplayer typing game featuring live WPM, accuracy tracking and leaderboards. Built with Next.js and WebSockets.
+    </li>
+
+    <li style="margin-bottom:12px;">
+      <strong>
+        <a href="https://quality-keeper.vercel.app" style="color:#2563eb; text-decoration:none;">Quality Keeper</a>
+      </strong>
+      <br>
+      An AI powered media compression SaaS with a 60% compression ratio and 200+ users. Built with Next.js, Prisma and Cloudinary.
+    </li>
+  </ul>
 
   <p>
-    Portfolio:
-    <a href="{{portfolio}}">{{portfolio}}</a><br>
-    Resume:
-    <a href="{{resume}}">{{resume}}</a>
+    I am looking for a team where I can contribute to building impactful products, take ownership and grow as an engineer. I believe my hands on experience could be valuable to {{company}}.
   </p>
 
   <p>
-    I enjoy building polished, production ready web applications using React,
-    Next.js, Node.js, TypeScript, and PostgreSQL. I care about writing clean
-    code, shipping reliable features, and creating products that people enjoy
-    using.
+    I would love to connect and discuss how I could contribute to your team.
   </p>
 
-  <p>
-    If my work resonates with what your team values, I would be grateful to be
-    kept in mind for future opportunities or to have a quick chat.
-  </p>
-
-  <p>
-    Thank you for your time, and I look forward to hearing from you.
-  </p>
-
-  <p>
+  <p style="margin-top:24px;">
     Best regards,<br>
-    {{name}}
+    <strong>{{name}}</strong><br>
+    <a href="{{portfolio}}" style="color:#2563eb; text-decoration:none;">Portfolio</a>
+    &nbsp;|&nbsp;
+    <a href="{{resume}}" style="color:#2563eb; text-decoration:none;">Resume</a>
   </p>
+
 </body>
 </html>
+
 `;
 
 // Legacy

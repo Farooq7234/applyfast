@@ -5,6 +5,7 @@ const AUTH_PATHS = ["/sign-in"];
 
 const PROTECTED_PATHS = [
   "/applications",
+  "/outreach",
   "/targets",
   "/email-finder",
   "/templates",
@@ -13,41 +14,54 @@ const PROTECTED_PATHS = [
   "/onboarding",
 ];
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow Next.js assets
+  // Allow Next.js internal assets and static files
   if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/_next/") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
   }
 
-  // Allow Better Auth API
-  if (pathname.startsWith("/api/auth")) {
+  // Allow Better Auth endpoints
+  if (pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 
   const session = getSessionCookie(request);
 
-  // Logged in users should not access auth pages
-  if (session && AUTH_PATHS.includes(pathname)) {
+  // Match exact paths and their nested routes
+  const matchesPath = (paths: string[]) =>
+    paths.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`)
+    );
+
+  const isAuthPath = matchesPath(AUTH_PATHS);
+  const isProtectedPath = matchesPath(PROTECTED_PATHS);
+
+  // Redirect users with a session cookie away from sign-in
+  if (session && isAuthPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Guests can access only auth pages
+  // Redirect guests away from protected pages
+  if (!session && isProtectedPath) {
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("callbackURL", pathname);
 
-  const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
-
-  if (!session && isProtected) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    return NextResponse.redirect(signInUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+  ],
 };

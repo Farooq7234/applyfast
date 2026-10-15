@@ -23,12 +23,14 @@ import {
   SearchIcon,
   Mails,
   Building2,
+  Send,
 } from "lucide-react";
 import { Button } from "../ui/button";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: SendHorizontal },
+  { href: "/outreach", label: "Outreach", icon: Send },
   { href: "/targets", label: "Targets", icon: Building2 },
   { href: "/receive-emails", label: "Emails", icon: Mails  },
   { href: "/email-finder", label: "Email Finder", icon: SearchIcon },
