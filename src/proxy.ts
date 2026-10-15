@@ -4,6 +4,7 @@ import { getSessionCookie } from "better-auth/cookies";
 const AUTH_PATHS = ["/sign-in"];
 
 const PROTECTED_PATHS = [
+  "/dashboard", // added: guests shouldn't reach this either
   "/applications",
   "/outreach",
   "/targets",
@@ -35,17 +36,17 @@ export function proxy(request: NextRequest) {
 
   const session = getSessionCookie(request);
 
-  // Match exact paths and their nested routes
   const matchesPath = (paths: string[]) =>
     paths.some(
       (path) => pathname === path || pathname.startsWith(`${path}/`)
     );
 
+  const isRoot = pathname === "/";
   const isAuthPath = matchesPath(AUTH_PATHS);
   const isProtectedPath = matchesPath(PROTECTED_PATHS);
 
-  // Redirect users with a session cookie away from sign-in
-  if (session && isAuthPath) {
+  // Logged-in users skip the landing page and sign-in page
+  if (session && (isRoot || isAuthPath)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
