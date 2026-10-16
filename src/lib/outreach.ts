@@ -3,7 +3,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const OUTREACH_TEMPLATE_ID = "cold-outreach";
 export const OUTREACH_TEMPLATE_VERSION = "2.0.0";
 export const OUTREACH_TEMPLATE_NAME = "Cold Outreach";
-export const DAILY_OUTREACH_LIMIT = 15;
+export const DAILY_OUTREACH_LIMIT = 30;
 
 export function hasDailyOutreachQuota(authorizedAttempts: number): boolean {
   return (
