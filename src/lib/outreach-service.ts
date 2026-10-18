@@ -493,76 +493,6 @@ function summarizeAttempts(attempts: DailyReportAttempt[]) {
   };
 }
 
-async function generateGeminiSummary(
-  attempts: DailyReportAttempt[],
-  counts: ReturnType<typeof summarizeAttempts>,
-  skipped: number,
-): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return getDeterministicDailySummary({ ...counts, skipped });
-
-  const safeRecords = attempts.map((attempt) => ({
-    status: attempt.status,
-    issue: attempt.failureReason?.slice(0, 200) ?? null,
-  }));
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: [
-                  "Summarize the following outreach activity in one or two concise factual sentences.",
-                  "Use only the supplied counts and statuses; do not invent facts or include recipient email addresses.",
-                  JSON.stringify({ counts: { ...counts, skipped }, records: safeRecords }),
-                ].join("\n"),
-              },
-            ],
-          },
-        ],
-      generationConfig: {
-        maxOutputTokens: 160,
-        temperature: 0.1,
-        responseMimeType: "text/plain",
-      },
-      }),
-      signal: AbortSignal.timeout(12_000),
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`Gemini summary request failed (${response.status}).`);
-  }
-  const payload: unknown = await response.json();
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Gemini returned an invalid response.");
-  }
-  const candidates = (payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }).candidates;
-  const summary = candidates?.[0]?.content?.parts
-    ?.map((part) => part.text ?? "")
-    .join("")
-    .trim();
-  if (!summary || summary.length > 1200) {
-    throw new Error("Gemini returned an empty or oversized summary.");
-  }
-  const expectedNumbers = Object.values({ ...counts, skipped })
-    .map(String)
-    .filter((value, index, values) => values.indexOf(value) === index);
-  if (expectedNumbers.some((number) => !summary.includes(number))) {
-    throw new Error("Gemini summary omitted one or more verified activity counts.");
-  }
-  if (/@/.test(summary)) {
-    throw new Error("Gemini summary unexpectedly included an email address.");
-  }
-  return summary;
-}
-
 function isValidEmail(email: string): boolean {
   return normalizeRecipientEmail(email) !== null;
 }
@@ -676,13 +606,7 @@ async function deliverDailyReport(
   }));
   const counts = summarizeAttempts(reportAttempts);
 
-  let summary: string;
-  try {
-    summary = await generateGeminiSummary(reportAttempts, counts, skipped);
-  } catch (error) {
-    console.error("[Outreach] Gemini summary failed; using factual fallback.", error);
-    summary = getDeterministicDailySummary({ ...counts, skipped });
-  }
+  const summary = getDeterministicDailySummary({ ...counts, skipped });
 
   await db.outreachDailyReport.update({
     where: { id: report.id },
