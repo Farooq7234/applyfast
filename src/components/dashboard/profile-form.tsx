@@ -21,6 +21,9 @@ interface ProfileFormProps {
     github: string | null;
     phone: string | null;
     resumeUrl: string | null;
+    projectUrl1: string | null;
+    projectUrl2: string | null;
+    projectUrl3: string | null;
   } | null;
 }
 
@@ -41,6 +44,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       linkedin: profile?.linkedin ?? "",
       github: profile?.github ?? "",
       phone: profile?.phone ?? "",
+      projectUrl1: profile?.projectUrl1 ?? "",
+      projectUrl2: profile?.projectUrl2 ?? "",
+      projectUrl3: profile?.projectUrl3 ?? "",
     },
   });
 
@@ -113,6 +119,21 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               <Label htmlFor="github">GitHub URL</Label>
               <Input id="github" placeholder="https://github.com/you" {...register("github")} />
               {errors.github && <p className="text-xs text-destructive">{errors.github.message}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="projectUrl1">Project URLs (optional)</Label>
+              <Input id="projectUrl1" placeholder="https://yourproject.dev" {...register("projectUrl1")} />
+              <Input id="projectUrl2" placeholder="https://second-project.dev" {...register("projectUrl2")} />
+              <Input id="projectUrl3" placeholder="https://third-project.dev" {...register("projectUrl3")} />
+              <p className="text-xs text-muted-foreground">
+                Add up to 3 project URLs. Use {"{{{PROJECT_1}}}"},{" "}
+                {"{{{PROJECT_2}}}"}, or {"{{{PROJECT_3}}}"} in your template.
+                Empty slots render nothing.
+              </p>
+              {errors.projectUrl1 && <p className="text-xs text-destructive">{errors.projectUrl1.message}</p>}
+              {errors.projectUrl2 && <p className="text-xs text-destructive">{errors.projectUrl2.message}</p>}
+              {errors.projectUrl3 && <p className="text-xs text-destructive">{errors.projectUrl3.message}</p>}
             </div>
 
             <Button type="submit" disabled={isPending} className="w-full">

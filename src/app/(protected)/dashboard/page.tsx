@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { getDashboardStats, getApplicationsOverTime, getApplicationStatusBreakdown, getTopRoles, getTopCompanies } from "@/actions/applications";
 import { getServerSession } from "@/lib/session";
-import { ensureDefaultTemplate } from "@/actions/templates";
 import { StatCard, StatCardSkeleton } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -128,9 +127,6 @@ async function ChartsSection() {
 export default async function DashboardPage() {
   const session = await getServerSession();
   if (!session) redirect("/sign-in");
-
-  // Ensure the user has a default template
-  await ensureDefaultTemplate(session.user.id);
 
   return (
     <div className="flex flex-col gap-6 p-6">

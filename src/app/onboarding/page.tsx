@@ -56,7 +56,7 @@ export default function OnboardingPage() {
         <CardHeader>
           <CardTitle>Set up your profile</CardTitle>
           <CardDescription>
-            Fill this in once — it&apos;ll be used in every application you send.
+            Fill this in once it&apos;ll be used in every application you send.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>

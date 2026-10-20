@@ -72,6 +72,7 @@ Phone (optional)
 Portfolio
 LinkedIn
 GitHub
+Project URLs (up to 3, optional)
 Resume Upload
 
 Save this information in the database.
@@ -125,25 +126,39 @@ Validation using Zod.
 
 5. Email Templates
 
-Create one default template.
+Create at least one template before sending applications. Templates are stored in Resend and are scoped per user by template alias.
+
+Optional values such as {{{LINKEDIN}}}, {{{GITHUB}}}, {{{PHONE}}}, {{{PROJECT_1}}}, {{{PROJECT_2}}}, and {{{PROJECT_3}}} render nothing when the profile field is empty, so they can be left out of the email.
 
 Subject
 
-Application for {{role}}
+Application for {{{ROLE}}}
 
 Body
 
-Hi {{recruiter_name}},
+Hi {{{RECRUITER_NAME}}},
 
 I hope you are doing well.
 
-I came across the opening for {{role}} at {{company}} and wanted to express my interest.
+I came across the opening for {{{ROLE}}} at {{{COMPANY}}} and wanted to express my interest.
 
 I have experience building modern full stack web applications using React, Next.js, Node.js, PostgreSQL, and TypeScript.
 
 You can view my portfolio here:
 
-{{portfolio}}
+{{{PORTFOLIO}}}
+
+{{{LINKEDIN}}}
+
+{{{GITHUB}}}
+
+{{{PHONE}}}
+
+{{{PROJECT_1}}}
+
+{{{PROJECT_2}}}
+
+{{{PROJECT_3}}}
 
 I have attached my resume.
 
@@ -151,7 +166,7 @@ Thank you for your time and consideration.
 
 Best regards,
 
-{{name}}
+{{{NAME}}}
 
 If recruiter name is empty,
 
@@ -252,6 +267,9 @@ linkedin
 github
 phone
 resumeUrl
+projectUrl1
+projectUrl2
+projectUrl3
 createdAt
 
 Application
@@ -271,12 +289,9 @@ createdAt
 
 Template
 
-id
-userId
-name
-subject
-body
-isDefault
+Stored in Resend (name, subject, html, published status).
+Linked to a user by the template alias prefix.
+No local Template table.
 
 ---------------------------------------
 

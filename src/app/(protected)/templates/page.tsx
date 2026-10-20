@@ -14,31 +14,55 @@ export default async function TemplatesPage() {
       <div>
         <h1 className="text-xl font-semibold">Templates</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your email templates. Use{" "}
+          Manage your Resend email templates. Use{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{recruiter_name}}"}
+            {"{{{RECRUITER_NAME}}}"}
           </code>
           {", "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{role}}"}
+            {"{{{ROLE}}}"}
           </code>
           {", "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{company}}"}
+            {"{{{COMPANY}}}"}
           </code>
           {", "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{portfolio}}"}
+            {"{{{PORTFOLIO}}}"}
           </code>
           {", "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{resume}}"}
+            {"{{{LINKEDIN}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{GITHUB}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{PHONE}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{RESUME}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{PROJECT_1}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{PROJECT_2}}}"}
+          </code>
+          {", "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {"{{{PROJECT_3}}}"}
           </code>
           {" and "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            {"{{name}}"}
+            {"{{{NAME}}}"}
           </code>{" "}
-          as placeholders — they get filled automatically when you send.
+          as placeholders they get filled automatically when you send.
         </p>
       </div>
       <TemplatesList templates={templates} />

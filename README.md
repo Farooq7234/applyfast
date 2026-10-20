@@ -67,10 +67,10 @@ App runs at [http://localhost:3000](http://localhost:3000).
 ## Features
 
 - **Auth** — Sign up, sign in, and sign out with Better Auth
-- **Profile** — Store name, portfolio, LinkedIn, GitHub, phone, and resume URL
+- **Profile** — Store name, portfolio, LinkedIn, GitHub, phone, up to 3 project URLs, and resume URL
 - **Applications** — Send applications individually or in personalized batches
 - **Applications table** — Search, view, resend, and delete application records
-- **Email templates** — Use templates with variables such as `{{role}}`, `{{company}}`, and `{{name}}`
+- **Email templates** — Use Resend templates with variables such as `{{{ROLE}}}`, `{{{COMPANY}}}`, `{{{LINKEDIN}}}`, and `{{{NAME}}}`; optional fields like `{{{GITHUB}}}`, `{{{PHONE}}}`, and `{{{PROJECT_1}}}` disappear when empty
 - **Dashboard** — Application, delivery, and follow-up statistics
 - **Daily outreach** — Review a queue sourced from existing application contacts; automatically send up to 15 cold outreach attempts per user per UTC day
 - **Outreach controls** — Preview the personalized company/recruiter email, enable or pause automation, skip contacts, and inspect outcomes

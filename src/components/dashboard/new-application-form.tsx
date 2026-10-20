@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,36 +26,31 @@ import {
   AlertCircle,
   Sparkles,
   Eraser,
-  Edit3,
-  X,
-  Save,
   Plus,
   Trash2,
   Clock,
 } from "lucide-react";
-import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
-import { Template } from "@prisma/client";
+import {
+  buildTemplateVariables,
+  renderTemplate,
+  type UserTemplate,
+} from "@/lib/template-variables";
 import { useSendApplication } from "@/hooks/use-send-application";
-import { updateTemplate } from "@/actions/templates";
 import { toast } from "sonner";
 
-// Variable tokens for insertion
-const VARIABLES = [
-  "{{recruiter_name}}",
-  "{{role}}",
-  "{{company}}",
-  "{{portfolio}}",
-  "{{resume}}",
-  "{{name}}",
-];
-
 interface NewApplicationFormProps {
-  templates: Template[];
+  templates: UserTemplate[];
   profile: {
     name: string;
     portfolio: string | null;
+    linkedin: string | null;
+    github: string | null;
+    phone: string | null;
     resumeUrl: string | null;
+    projectUrl1: string | null;
+    projectUrl2: string | null;
+    projectUrl3: string | null;
   } | null;
   initialValues?: Partial<ApplicationInput>;
   showPreview?: boolean;
@@ -184,9 +179,8 @@ export function NewApplicationForm({
   allowBatch = true,
 }: NewApplicationFormProps) {
   const router = useRouter();
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+  const [selectedTemplate, setSelectedTemplate] = useState<UserTemplate | null>(
     templates.find((t) => t.id === initialValues.templateId) ??
-      templates.find((t) => t.isDefault) ??
       templates[0] ??
       null,
   );
@@ -209,10 +203,6 @@ export function NewApplicationForm({
   );
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAtLocal, setScheduledAtLocal] = useState("");
-  const [isTemplatePending, startTemplateTransition] = useTransition();
-  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
-  const [editingSubject, setEditingSubject] = useState("");
-  const [editingBody, setEditingBody] = useState("");
   const [autoFilled, setAutoFilled] = useState<{
     company: boolean;
     recruiterName: boolean;
@@ -302,61 +292,6 @@ export function NewApplicationForm({
     setBatchResults(null);
   }
 
-  // --- Template editing helpers ---
-
-  function startEditingTemplate() {
-    if (!selectedTemplate) return;
-    setEditingSubject(selectedTemplate.subject);
-    setEditingBody(selectedTemplate.body);
-    setIsEditingTemplate(true);
-  }
-
-  function cancelEditingTemplate() {
-    setIsEditingTemplate(false);
-    setEditingSubject("");
-    setEditingBody("");
-  }
-
-  function saveTemplate() {
-    if (!selectedTemplate) return;
-    startTemplateTransition(async () => {
-      const result = await updateTemplate(selectedTemplate.id, {
-        name: selectedTemplate.name,
-        subject: editingSubject,
-        body: editingBody,
-        isDefault: selectedTemplate.isDefault,
-      });
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      // Update local state immediately
-      setSelectedTemplate({
-        ...selectedTemplate,
-        subject: editingSubject,
-        body: editingBody,
-      });
-      toast.success("Template saved");
-      setIsEditingTemplate(false);
-    });
-  }
-
-  function insertVariable(textareaId: string, token: string) {
-    const textarea = document.getElementById(
-      textareaId,
-    ) as HTMLTextAreaElement | null;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const next = editingBody.slice(0, start) + token + editingBody.slice(end);
-    setEditingBody(next);
-    // Restore cursor after token
-    requestAnimationFrame(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + token.length;
-      textarea.focus();
-    });
-  }
-
   // --- End template editing helpers ---
 
   function handleEmailChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -433,32 +368,29 @@ export function NewApplicationForm({
     );
   }
 
-  const activeTemplateBody = isEditingTemplate
-    ? editingBody
-    : (selectedTemplate?.body ?? "");
-  const activeTemplateSubject = isEditingTemplate
-    ? editingSubject
-    : (selectedTemplate?.subject ?? "");
+  const previewVariables = buildTemplateVariables({
+    role: watchedValues.role?.trim() || "{{{ROLE}}}",
+    company: watchedValues.company?.trim() || "{{{COMPANY}}}",
+    recruiterName: batchMode
+      ? batchRecipients[0]?.recruiterName || "team"
+      : watchedValues.recruiterName,
+    portfolio: profile?.portfolio,
+    linkedin: profile?.linkedin,
+    github: profile?.github,
+    phone: profile?.phone,
+    resumeUrl: profile?.resumeUrl,
+    projectUrl1: profile?.projectUrl1,
+    projectUrl2: profile?.projectUrl2,
+    projectUrl3: profile?.projectUrl3,
+    name: profile?.name || "{{{NAME}}}",
+  });
 
   const previewBody = selectedTemplate
-    ? buildEmailBody(activeTemplateBody, {
-        role: watchedValues.role ?? "{{role}}",
-        company: watchedValues.company ?? "{{company}}",
-        recruiterName: batchMode
-          ? batchRecipients[0]?.recruiterName || "team"
-          : watchedValues.recruiterName,
-        portfolio: profile?.portfolio ?? undefined,
-        resumeUrl: profile?.resumeUrl ?? undefined,
-        name: profile?.name ?? "{{name}}",
-      })
+    ? renderTemplate(selectedTemplate.html, previewVariables)
     : "";
 
   const previewSubject = selectedTemplate
-    ? buildEmailSubject(
-        activeTemplateSubject,
-        watchedValues.role ?? "{{role}}",
-        watchedValues.company ?? "{{company}}",
-      )
+    ? renderTemplate(selectedTemplate.subject ?? "", previewVariables)
     : "";
 
   function onSubmit(data: ApplicationInput) {
@@ -549,6 +481,31 @@ export function NewApplicationForm({
                 onClick={() => router.push("/profile")}
               >
                 Go to Profile
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (templates.length === 0) {
+    return (
+      <Card className="max-w-lg">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">Template required</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create at least one email template before sending applications.
+              </p>
+              <Button
+                className="mt-3"
+                size="sm"
+                onClick={() => router.push("/templates")}
+              >
+                Create a Template
               </Button>
             </div>
           </div>
@@ -829,7 +786,7 @@ export function NewApplicationForm({
                   value={selectedTemplate?.id ?? ""}
                   onChange={(e) => {
                     const id = e.target.value;
-                    setValue("templateId", id || undefined);
+                    setValue("templateId", id);
                     setSelectedTemplate(
                       templates.find((t) => t.id === id) ?? null,
                     );
@@ -1023,127 +980,33 @@ export function NewApplicationForm({
         <div className="flex flex-col gap-3">
           <Card>
             <CardContent className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Preview
+              <p className="text-xs font-medium text-muted-foreground">
+                Preview
+              </p>
+
+              <div>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
+                  Subject
                 </p>
-                {selectedTemplate && !isEditingTemplate && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={startEditingTemplate}
-                    className="gap-1.5"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    Edit Template
-                  </Button>
+                <p className="text-sm font-medium">
+                  {previewSubject || "Fill in role to see subject"}
+                </p>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  Body
+                </p>
+
+                {previewBody ? (
+                  <div className="overflow-auto border bg-background p-4">
+                    <div dangerouslySetInnerHTML={{ __html: previewBody }} />
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Fill in the form to see preview
+                  </p>
                 )}
               </div>
-
-              {isEditingTemplate ? (
-                <div className="flex flex-col gap-3">
-                  {/* Variable helpers */}
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="insert-vars" className="text-xs">
-                      Insert Variables
-                    </Label>
-                    <div id="insert-vars" className="flex flex-wrap gap-1.5">
-                      {VARIABLES.map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() =>
-                            insertVariable("template-body-input", v)
-                          }
-                          className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-mono hover:bg-secondary transition-colors"
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Subject edit */}
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="template-subject-input" className="text-xs">
-                      Subject
-                    </Label>
-                    <Input
-                      id="template-subject-input"
-                      value={editingSubject}
-                      onChange={(e) => setEditingSubject(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* Body edit */}
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="template-body-input" className="text-xs">
-                      Body (HTML supported)
-                    </Label>
-                    <textarea
-                      id="template-body-input"
-                      value={editingBody}
-                      onChange={(e) => setEditingBody(e.target.value)}
-                      className="flex min-h-[350px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y"
-                    />
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={cancelEditingTemplate}
-                      disabled={isTemplatePending}
-                    >
-                      <X className="h-4 w-4 mr-1.5" />
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={saveTemplate}
-                      disabled={isTemplatePending}
-                      className="gap-1.5"
-                    >
-                      {isTemplatePending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      Save
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">
-                      Subject
-                    </p>
-                    <p className="text-sm font-medium">
-                      {previewSubject || "Fill in role to see subject"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      Body
-                    </p>
-
-                    {previewBody ? (
-                      <div className="overflow-auto border bg-background p-4">
-                        <div
-                          dangerouslySetInnerHTML={{ __html: previewBody }}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Fill in the form to see preview
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
         </div>

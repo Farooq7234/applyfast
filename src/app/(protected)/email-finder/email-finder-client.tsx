@@ -12,7 +12,7 @@ import {
   Copy,
   Send,
 } from "lucide-react";
-import type { Template } from "@prisma/client";
+import type { UserTemplate } from "@/lib/template-variables";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +37,7 @@ interface EmailResult {
 }
 
 interface EmailFinderClientProps {
-  templates: Template[];
+  templates: UserTemplate[];
   profile: {
     id: string;
     name: string;
@@ -47,6 +47,9 @@ interface EmailFinderClientProps {
     github: string | null;
     phone: string | null;
     resumeUrl: string | null;
+    projectUrl1: string | null;
+    projectUrl2: string | null;
+    projectUrl3: string | null;
     createdAt: Date;
   } | null;
 }

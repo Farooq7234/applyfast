@@ -8,7 +8,9 @@ import {
 } from "@/lib/validations";
 import { FOLLOW_UP_DELAY_MS, scheduledFollowUpDate } from "@/lib/scheduling";
 import { requireSession } from "@/lib/session";
-import { buildEmailBody, buildEmailSubject, getResend, getResendFrom } from "@/lib/email";
+import { getResend, getResendFrom } from "@/lib/email";
+import { buildTemplateVariables, renderTemplate } from "@/lib/template-variables";
+import { getUserTemplate } from "@/lib/resend-templates";
 import { revalidatePath } from "next/cache";
 
 export async function createApplication(data: unknown) {
@@ -28,41 +30,37 @@ export async function createApplication(data: unknown) {
   if (!user) return { error: "User not found" };
   if (!user.resumeUrl) return { error: "Please add your resume URL in your profile first" };
 
-  // Resolve template
-  let templateSubject: string;
-  let templateBody: string;
-
-  if (templateId) {
-    const template = await db.template.findUnique({ where: { id: templateId } });
-    if (!template) return { error: "Template not found" };
-    templateSubject = template.subject;
-    templateBody = template.body;
-  } else {
-    const defaultTemplate = await db.template.findFirst({
-      where: { userId: session.user.id, isDefault: true },
-    });
-    if (!defaultTemplate) return { error: "No default template found" };
-    templateSubject = defaultTemplate.subject;
-    templateBody = defaultTemplate.body;
+  // Resolve the user's Resend template
+  const template = await getUserTemplate(session.user.id, templateId);
+  if (!template) {
+    return {
+      error: "Create a template in Templates before sending an application.",
+    };
   }
 
-  const vars = {
+  const variables = buildTemplateVariables({
     role,
     company,
     recruiterName,
     portfolio: user.portfolio,
+    linkedin: user.linkedin,
+    github: user.github,
+    phone: user.phone,
     resumeUrl: user.resumeUrl,
+    projectUrl1: user.projectUrl1,
+    projectUrl2: user.projectUrl2,
+    projectUrl3: user.projectUrl3,
     name: user.name,
-  };
+  });
 
-  const subject = buildEmailSubject(templateSubject, role, company);
- const html = buildEmailBody(templateBody, vars);
+  const subject = renderTemplate(template.subject ?? "", variables);
+  const html = renderTemplate(template.html, variables);
 
   const {data:sendData, error: sendError } = await getResend().emails.send({
     from: getResendFrom(),
     to: companyEmail,
     subject,
-    html,
+    template: { id: template.id, variables },
     ...(scheduledDate ? { scheduledAt: scheduledDate.toISOString() } : {}),
   });
 
@@ -130,39 +128,42 @@ export async function createApplicationsBatch(data: unknown) {
     return { error: "Please add your resume URL in your profile first" };
   }
 
-  const template = templateId
-    ? await db.template.findFirst({
-        where: { id: templateId, userId: session.user.id },
-      })
-    : await db.template.findFirst({
-        where: { userId: session.user.id, isDefault: true },
-      });
-
+  const template = await getUserTemplate(session.user.id, templateId);
   if (!template) {
     return {
-      error: templateId ? "Template not found" : "No default template found",
+      error: "Create a template in Templates before sending applications.",
     };
   }
 
   const renderedEmails = recipients.map((recipient) => {
-    const subject = buildEmailSubject(template.subject, role, company);
-    const body = buildEmailBody(template.body, {
+    const variables = buildTemplateVariables({
       role,
       company,
-      recruiterName: recipient.recruiterName || "team",
+      recruiterName: recipient.recruiterName,
       portfolio: user.portfolio,
+      linkedin: user.linkedin,
+      github: user.github,
+      phone: user.phone,
       resumeUrl: user.resumeUrl,
+      projectUrl1: user.projectUrl1,
+      projectUrl2: user.projectUrl2,
+      projectUrl3: user.projectUrl3,
       name: user.name,
     });
 
-    return { recipient, subject, body };
+    return {
+      recipient,
+      variables,
+      subject: renderTemplate(template.subject ?? "", variables),
+      body: renderTemplate(template.html, variables),
+    };
   });
 
-  const messages = renderedEmails.map(({ recipient, subject, body }) => ({
+  const messages = renderedEmails.map(({ recipient, subject, variables }) => ({
     from: getResendFrom(),
     to: recipient.companyEmail,
     subject,
-    html: body,
+    template: { id: template.id, variables },
     ...(scheduledDate ? { scheduledAt: scheduledDate.toISOString() } : {}),
   }));
 

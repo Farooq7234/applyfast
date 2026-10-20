@@ -19,11 +19,13 @@ model User {
   github        String?
   phone         String?
   resumeUrl     String?
+  projectUrl1   String?
+  projectUrl2   String?
+  projectUrl3   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   applications       Application[]
-  templates          Template[]
   targetCompanies    TargetCompany[]
   outreachCampaign   OutreachCampaign?
   outreachRecipients OutreachRecipient[]
@@ -97,18 +99,6 @@ model Application {
   outreachRecipients OutreachRecipient[]
 
   @@index([userId, scheduledAt])
-}
-
-model Template {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  subject   String
-  body      String
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum ApplicationStatus {

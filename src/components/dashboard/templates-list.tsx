@@ -4,9 +4,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   createTemplate,
-  updateTemplate,
   deleteTemplate,
-  setDefaultTemplate,
+  updateTemplate,
 } from "@/actions/templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,36 +23,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Trash2, X, Loader2, FileText } from "lucide-react";
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  Star,
-  X,
-  Loader2,
-  FileText,
-} from "lucide-react";
-import { Template } from "@prisma/client";
+  TEMPLATE_VARIABLE_TOKENS,
+  type UserTemplate,
+} from "@/lib/template-variables";
 
-// ─── Variable tokens shown as helpers ─────────────────────────────────────────
-const VARIABLES = [
-  "{{recruiter_name}}",
-  "{{role}}",
-  "{{company}}",
-  "{{portfolio}}",
-  "{{resume}}",
-  "{{name}}",
-];
+interface TemplateData {
+  name: string;
+  subject: string;
+  body: string;
+}
 
 // ─── Inline form (create or edit) ─────────────────────────────────────────────
 interface TemplateFormProps {
-  initial?: Template;
-  onSave: (data: {
-    name: string;
-    subject: string;
-    body: string;
-    isDefault: boolean;
-  }) => void | Promise<void>;
+  initial?: UserTemplate;
+  onSave: (data: TemplateData) => void | Promise<void>;
   onCancel: () => void;
   saving: boolean;
 }
@@ -61,8 +46,7 @@ interface TemplateFormProps {
 function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [subject, setSubject] = useState(initial?.subject ?? "");
-  const [body, setBody] = useState(initial?.body ?? "");
-  const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
+  const [body, setBody] = useState(initial?.html ?? "");
 
   // Insert a variable token at cursor position in the textarea
   function insertVariable(textarea: HTMLTextAreaElement | null, token: string) {
@@ -80,7 +64,7 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSave({ name, subject, body, isDefault });
+    onSave({ name, subject, body });
   }
 
   return (
@@ -100,7 +84,7 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
           <Label htmlFor="tpl-subject">Subject *</Label>
           <Input
             id="tpl-subject"
-            placeholder="e.g. Application for {{role}} at {{company}}"
+            placeholder="e.g. Application for {{{ROLE}}} at {{{COMPANY}}}"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             required
@@ -112,31 +96,34 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
       <div className="flex flex-col gap-1.5">
         <Label>Insert Variable</Label>
         <div className="flex flex-wrap gap-1.5">
-          {VARIABLES.map((v) => (
+          {TEMPLATE_VARIABLE_TOKENS.map((token) => (
             <button
-              key={v}
+              key={token}
               type="button"
               onClick={() => {
-                const ta = document.getElementById("tpl-body") as HTMLTextAreaElement | null;
-                insertVariable(ta, v);
+                const ta = document.getElementById(
+                  "tpl-body",
+                ) as HTMLTextAreaElement | null;
+                insertVariable(ta, token);
               }}
               className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-mono hover:bg-secondary transition-colors"
             >
-              {v}
+              {token}
             </button>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
           Click a variable to insert it at the cursor position in the body.
+          Variables are stored in Resend and filled when you send.
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tpl-body">Body *</Label>
+        <Label htmlFor="tpl-body">Body (HTML) *</Label>
         <Textarea
           id="tpl-body"
           rows={14}
-          placeholder="Write your email body here. Use {{role}}, {{company}}, {{recruiter_name}} etc."
+          placeholder="Write your email body here. Use {{{ROLE}}}, {{{COMPANY}}}, {{{LINKEDIN}}}, {{{PROJECT_1}}}, {{{RECRUITER_NAME}}} etc."
           value={body}
           onChange={(e) => setBody(e.target.value)}
           className="font-mono text-sm resize-y"
@@ -144,22 +131,17 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={isDefault}
-          onChange={(e) => setIsDefault(e.target.checked)}
-          className="h-4 w-4 rounded border border-border accent-primary"
-        />
-        Set as default template
-      </label>
-
       <div className="flex gap-2">
         <Button type="submit" disabled={saving} className="gap-1.5">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {initial ? "Save Changes" : "Create Template"}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={saving}
+        >
           Cancel
         </Button>
       </div>
@@ -169,11 +151,11 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
 
 // ─── Main list ────────────────────────────────────────────────────────────────
 interface TemplatesListProps {
-  templates: Template[];
+  templates: UserTemplate[];
 }
 
 export function TemplatesList({ templates: initial }: TemplatesListProps) {
-  const [templates, setTemplates] = useState<Template[]>(initial);
+  const [templates, setTemplates] = useState<UserTemplate[]>(initial);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -184,7 +166,7 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
     window.location.reload();
   }
 
-  function handleCreate(data: { name: string; subject: string; body: string; isDefault: boolean }) {
+  function handleCreate(data: TemplateData) {
     startTransition(async () => {
       const result = await createTemplate(data);
       if (result.error) {
@@ -197,10 +179,7 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
     });
   }
 
-  function handleUpdate(
-    id: string,
-    data: { name: string; subject: string; body: string; isDefault: boolean }
-  ) {
+  function handleUpdate(id: string, data: TemplateData) {
     startTransition(async () => {
       const result = await updateTemplate(id, data);
       if (result.error) {
@@ -227,26 +206,15 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
     });
   }
 
-  function handleSetDefault(id: string) {
-    startTransition(async () => {
-      const result = await setDefaultTemplate(id);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Default template updated");
-      setTemplates((prev) =>
-        prev.map((t) => ({ ...t, isDefault: t.id === id }))
-      );
-    });
-  }
-
   return (
     <div className="flex flex-col gap-4 max-w-3xl">
       {/* Create new button */}
       {!creating && (
         <Button
-          onClick={() => { setCreating(true); setEditingId(null); }}
+          onClick={() => {
+            setCreating(true);
+            setEditingId(null);
+          }}
           size="sm"
           className="self-start gap-1.5"
         >
@@ -277,7 +245,7 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
           <FileText className="mb-3 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">No templates yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create your first template to get started
+            Create your first template to start sending applications
           </p>
         </div>
       )}
@@ -311,48 +279,43 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold">{template.name}</span>
-                    {template.isDefault && (
-                      <Badge variant="secondary" className="text-xs">Default</Badge>
+                    <span className="text-sm font-semibold">
+                      {template.name}
+                    </span>
+                    {template.status === "draft" && (
+                      <Badge variant="secondary" className="text-xs">
+                        Draft
+                      </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {template.subject}
                   </p>
                   <pre className="mt-2 max-h-32 overflow-hidden rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap line-clamp-4">
-                    {template.body}
+                    {template.html}
                   </pre>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {!template.isDefault && (
-                    <button
-                      onClick={() => handleSetDefault(template.id)}
-                      disabled={isPending}
-                      title="Set as default"
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    >
-                      <Star className="h-4 w-4" />
-                    </button>
-                  )}
                   <button
-                    onClick={() => { setEditingId(template.id); setCreating(false); }}
+                    onClick={() => {
+                      setEditingId(template.id);
+                      setCreating(false);
+                    }}
                     title="Edit"
                     className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
-                  {!template.isDefault && (
-                    <button
-                      onClick={() => setDeleteId(template.id)}
-                      disabled={isPending}
-                      title="Delete"
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setDeleteId(template.id)}
+                    disabled={isPending}
+                    title="Delete"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </CardContent>
@@ -366,7 +329,7 @@ export function TemplatesList({ templates: initial }: TemplatesListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete template?</AlertDialogTitle>
             <AlertDialogDescription>
-              This cannot be undone. The default template cannot be deleted.
+              This removes the template from Resend and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

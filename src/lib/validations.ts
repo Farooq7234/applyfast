@@ -19,6 +19,9 @@ export const profileSchema = z.object({
   linkedin: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
   github: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
   phone: z.string().optional(),
+  projectUrl1: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+  projectUrl2: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+  projectUrl3: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
 });
 
 export const applicationSchema = z.object({
@@ -26,7 +29,7 @@ export const applicationSchema = z.object({
   companyEmail: z.string().email("Invalid email address"),
   role: z.string().min(1, "Role is required"),
   recruiterName: z.string().optional(),
-  templateId: z.string().optional(),
+  templateId: z.string().min(1, "Select a template"),
   scheduledAt: scheduledAtSchema,
 });
 
@@ -34,7 +37,7 @@ export const batchApplicationSchema = z
   .object({
     company: z.string().trim().min(1, "Company name is required"),
     role: z.string().trim().min(1, "Role is required"),
-    templateId: z.string().optional(),
+    templateId: z.string().min(1, "Select a template"),
     scheduledAt: scheduledAtSchema,
     requestId: z.string().uuid("Invalid batch request"),
     recipients: z

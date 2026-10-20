@@ -19,6 +19,9 @@ export interface User {
   github: string | null;
   phone: string | null;
   resumeUrl: string | null;
+  projectUrl1: string | null;
+  projectUrl2: string | null;
+  projectUrl3: string | null;
   createdAt: Date;
 }
 
@@ -37,15 +40,6 @@ export interface Application {
   followUpDate: Date | null;
   followUpSent: boolean;
   createdAt: Date;
-}
-
-export interface Template {
-  id: string;
-  userId: string;
-  name: string;
-  subject: string;
-  body: string;
-  isDefault: boolean;
 }
 
 export interface DashboardStats {
