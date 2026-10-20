@@ -26,6 +26,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { MobileUsagePill, SidebarUsageWidget } from "./resend-usage-widget";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -82,7 +83,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-1 p-2 pt-3">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2 pt-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active =
@@ -108,6 +109,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           );
         })}
       </nav>
+
+      <SidebarUsageWidget />
 
       {/* Sign out + theme toggle */}
       <div className="border-t border-border p-2 flex flex-col gap-1">
@@ -154,10 +157,11 @@ export function Sidebar() {
           </div>
           <span className="text-sm font-semibold tracking-tight">ApplyFast</span>
         </div>
-        <div className="flex items-center gap-1">
-           <Button size="sm" className="md:hidden">
+        <div className="flex items-center gap-1.5">
+          <Button size="sm" className="md:hidden">
             <Link href="/applications/new">New</Link>
           </Button>
+          <MobileUsagePill />
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(true)}

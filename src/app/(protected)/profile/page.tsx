@@ -1,6 +1,7 @@
 
 import { getProfile } from "@/actions/profile";
 import { ProfileForm } from "@/components/dashboard/profile-form";
+import { ResendUsageCard } from "@/components/dashboard/resend-usage-card";
 
 export default async function ProfilePage() {
 
@@ -16,6 +17,7 @@ export default async function ProfilePage() {
         </p>
       </div>
       <ProfileForm profile={profile} />
+      <ResendUsageCard />
     </div>
   );
 }
