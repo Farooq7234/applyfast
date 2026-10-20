@@ -158,9 +158,7 @@ export function Sidebar() {
           <span className="text-sm font-semibold tracking-tight">ApplyFast</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Button size="sm" className="md:hidden">
-            <Link href="/applications/new">New</Link>
-          </Button>
+       
           <MobileUsagePill />
           <ThemeToggle />
           <button
