@@ -54,7 +54,6 @@ export default async function ApplicationsPage({
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Application</span>
-            <span className="sm:hidden">New</span>
           </Button>
         </Link>
       </div>
