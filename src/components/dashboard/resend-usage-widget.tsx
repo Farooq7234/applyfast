@@ -120,7 +120,7 @@ export function MobileUsagePill() {
         <span className={textTone[tone]}>
           {formatNumber(daily.used)}
           {daily.limit !== null && (
-            <span className="text-muted-foreground">/{formatLimit(daily.limit)}</span>
+            <span className="text-muted-foreground"> / {formatLimit(daily.limit)}</span>
           )}
         </span>
       ) : (
