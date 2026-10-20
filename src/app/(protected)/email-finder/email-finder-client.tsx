@@ -18,13 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -58,8 +51,6 @@ interface EmailFinderClientProps {
   } | null;
 }
 
-type Provider = "hunter" | "snov" | "combined";
-
 function extractCompanyFromEmail(email: string) {
   const domain = email.split("@")[1] ?? "";
   const companySegment = domain.split(".")[0] ?? "";
@@ -78,7 +69,6 @@ export function EmailFinderClient({
   templates,
   profile,
 }: EmailFinderClientProps) {
-  const [provider, setProvider] = useState<Provider>("combined");
   const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [emails, setEmails] = useState<EmailResult[]>([]);
@@ -107,12 +97,7 @@ export function EmailFinderClient({
     setError("");
 
     try {
-      const endpoint =
-        provider === "combined"
-          ? "/api/email-finder/combined"
-          : `/api/email-finder/${provider}`;
-
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/email-finder/hunter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,21 +131,6 @@ export function EmailFinderClient({
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:max-w-4xl sm:flex-row">
-        <Select
-          value={provider}
-          onValueChange={(value) => setProvider(value as Provider)}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Select Service" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="combined">Combined (Recommended)</SelectItem>
-            <SelectItem value="hunter">Hunter.io</SelectItem>
-            <SelectItem value="snov">Snov.io</SelectItem>
-          </SelectContent>
-        </Select>
-
         <Input
           className="flex-1"
           placeholder="example.com"
