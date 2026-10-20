@@ -562,13 +562,12 @@ export async function getApplicationStatusBreakdown() {
 
   const statusCounts = await db.application.groupBy({
     by: ["status"],
-    where: { userId },
+    where: { userId, status: { not: "sent" } },
     _count: { status: true },
   });
 
   const statusMap: Record<string, string> = {
     scheduled: "Scheduled",
-    sent: "Sent",
     cancelled: "Cancelled",
     delivered: "Delivered",
     opened: "Opened",
