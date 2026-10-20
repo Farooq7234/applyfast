@@ -6,8 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   applicationSchema,
   batchApplicationSchema,
+  requiredScheduledAtSchema,
   type ApplicationInput,
 } from "@/lib/validations";
+import {
+  formatScheduledAt,
+  fromDateTimeLocalValue,
+  getScheduleBounds,
+} from "@/lib/scheduling";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +31,7 @@ import {
   Save,
   Plus,
   Trash2,
+  Clock,
 } from "lucide-react";
 import { buildEmailBody, buildEmailSubject } from "@/lib/email";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
@@ -66,7 +73,7 @@ interface BatchRecipient {
 
 interface BatchSendResult {
   index: number;
-  status: "sent" | "failed";
+  status: "sent" | "scheduled" | "failed";
   error?: string;
 }
 
@@ -200,6 +207,8 @@ export function NewApplicationForm({
   const [batchResults, setBatchResults] = useState<BatchSendResult[] | null>(
     null,
   );
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAtLocal, setScheduledAtLocal] = useState("");
   const [isTemplatePending, startTemplateTransition] = useTransition();
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [editingSubject, setEditingSubject] = useState("");
@@ -262,10 +271,36 @@ export function NewApplicationForm({
       },
     ]);
     setBatchResults(null);
+    setScheduleEnabled(false);
+    setScheduledAtLocal("");
     setPreview(false);
   }
 
   const watchedValues = watch();
+  const scheduleBounds = getScheduleBounds();
+
+  function getValidatedScheduledAt(): string | undefined | null {
+    if (!scheduleEnabled) return undefined;
+    if (!scheduledAtLocal) {
+      toast.error("Choose a date and time to schedule the email.");
+      return null;
+    }
+
+    const scheduledAt = fromDateTimeLocalValue(scheduledAtLocal);
+    const parsed = requiredScheduledAtSchema.safeParse(scheduledAt);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return null;
+    }
+
+    return parsed.data;
+  }
+
+  function handleScheduleToggle(enabled: boolean) {
+    setScheduleEnabled(enabled);
+    if (!enabled) setScheduledAtLocal("");
+    setBatchResults(null);
+  }
 
   // --- Template editing helpers ---
 
@@ -427,7 +462,10 @@ export function NewApplicationForm({
     : "";
 
   function onSubmit(data: ApplicationInput) {
-    void sendApplication(data, () => {
+    const scheduledAt = getValidatedScheduledAt();
+    if (scheduledAt === null) return;
+
+    void sendApplication({ ...data, scheduledAt }, () => {
       if (onSuccess) {
         onSuccess();
         handleClear();
@@ -442,11 +480,16 @@ export function NewApplicationForm({
     }
 
     event.preventDefault();
+
+    const scheduledAt = getValidatedScheduledAt();
+    if (scheduledAt === null) return;
+
     const values = getValues();
     const parsed = batchApplicationSchema.safeParse({
       company: values.company,
       role: values.role,
       templateId: selectedTemplate?.id,
+      scheduledAt,
       requestId: crypto.randomUUID(),
       recipients: batchRecipients.map(({ companyEmail, recruiterName }) => ({
         companyEmail,
@@ -696,14 +739,16 @@ export function NewApplicationForm({
                       {result && (
                         <p
                           className={
-                            result.status === "sent"
+                            result.status !== "failed"
                               ? "text-xs text-green-600"
                               : "text-xs text-destructive"
                           }
                         >
                           {result.status === "sent"
                             ? "Accepted by Resend"
-                            : result.error || "Failed"}
+                            : result.status === "scheduled"
+                              ? "Scheduled with Resend"
+                              : result.error || "Failed"}
                         </p>
                       )}
                     </div>
@@ -800,6 +845,68 @@ export function NewApplicationForm({
                 </select>
               </div>
             )}
+
+            <div className="flex flex-col gap-3 rounded-sm border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <Label>Send time</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Send now or schedule up to 30 days ahead.
+                  </p>
+                </div>
+                <div
+                  className="inline-flex rounded-md border border-border p-1"
+                  role="group"
+                  aria-label="Email send time"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={scheduleEnabled ? "ghost" : "default"}
+                    aria-pressed={!scheduleEnabled}
+                    disabled={isPending}
+                    onClick={() => handleScheduleToggle(false)}
+                  >
+                    Send now
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={scheduleEnabled ? "default" : "ghost"}
+                    aria-pressed={scheduleEnabled}
+                    disabled={isPending}
+                    onClick={() => handleScheduleToggle(true)}
+                    className="gap-1.5"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    Schedule
+                  </Button>
+                </div>
+              </div>
+
+              {scheduleEnabled && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="scheduledAt">Date and time *</Label>
+                  <Input
+                    id="scheduledAt"
+                    type="datetime-local"
+                    min={scheduleBounds.min}
+                    max={scheduleBounds.max}
+                    value={scheduledAtLocal}
+                    disabled={isPending}
+                    onChange={(event) => {
+                      setScheduledAtLocal(event.target.value);
+                      setBatchResults(null);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {scheduledAtLocal
+                      ? `${batchMode ? `${batchRecipients.length} emails` : "Email"} scheduled for ${formatScheduledAt(fromDateTimeLocalValue(scheduledAtLocal))} in your local timezone.`
+                      : `Choose when ${batchMode ? "all emails" : "the email"} should be sent. Times use your local timezone.`}
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -807,19 +914,27 @@ export function NewApplicationForm({
           <Button type="submit" className="flex-1 gap-2" disabled={isPending}>
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : scheduleEnabled ? (
+              <Clock className="h-4 w-4" />
             ) : (
               <Send className="h-4 w-4" />
             )}
             {isPending
-              ? "Sending..."
+              ? scheduleEnabled
+                ? "Scheduling..."
+                : "Sending..."
               : batchMode
-                ? `Send ${batchRecipients.length} Applications`
-                : "Send Application"}
+                ? scheduleEnabled
+                  ? `Schedule ${batchRecipients.length} Applications`
+                  : `Send ${batchRecipients.length} Applications`
+                : scheduleEnabled
+                  ? "Schedule Application"
+                  : "Send Application"}
           </Button>
 
           {/* button to support the sending the application through gmail  */}
 
-          {!batchMode && (
+          {!batchMode && !scheduleEnabled && (
             <Button
               type="button"
               className="flex-1 gap-2"

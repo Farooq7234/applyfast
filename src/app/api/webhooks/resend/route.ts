@@ -3,17 +3,20 @@ import { Webhook } from 'svix';
 import { db } from '@/lib/db';
 
 const STATUS_RANK: Record<ApplicationStatus, number> = {
-  sent: 1,
-  delivered: 2,
-  opened: 3,
-  clicked: 4,
-  delivery_delayed: 4,
-  bounced: 5,
-  complained: 5,
-  failed: 5,
+  scheduled: 1,
+  sent: 2,
+  delivered: 3,
+  opened: 4,
+  clicked: 5,
+  delivery_delayed: 5,
+  bounced: 6,
+  complained: 6,
+  failed: 6,
+  cancelled: 6,
 };
 
 const EVENT_TO_STATUS: Record<string, ApplicationStatus> = {
+  'email.scheduled': 'scheduled',
   'email.sent': 'sent',
   'email.delivered': 'delivered',
   'email.opened': 'opened',
@@ -23,6 +26,14 @@ const EVENT_TO_STATUS: Record<string, ApplicationStatus> = {
   'email.delivery_delayed': 'delivery_delayed',
   'email.failed': 'failed',
 };
+
+const SENT_OR_LATER_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
+  'sent',
+  'delivered',
+  'opened',
+  'clicked',
+  'delivery_delayed',
+]);
 
 type OutreachEventStatus = "ACCEPTED" | "DELIVERED" | "FAILED";
 type OutreachReportEventStatus = "ACCEPTED" | "DELIVERED" | "FAILED";
@@ -124,7 +135,12 @@ export async function POST(req: Request) {
         ) {
           await tx.application.update({
             where: { resendEmailId: emailId },
-            data: { status: newStatus },
+            data: {
+              status: newStatus,
+              ...(SENT_OR_LATER_STATUSES.has(newStatus) && !application.sentAt
+                ? { sentAt: new Date() }
+                : {}),
+            },
           });
         }
       }

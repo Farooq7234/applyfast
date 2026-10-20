@@ -6,6 +6,7 @@ import {
   createApplication,
   createApplicationsBatch,
 } from "@/actions/applications";
+import { formatScheduledAt } from "@/lib/scheduling";
 import type {
   ApplicationInput,
   BatchApplicationInput,
@@ -13,7 +14,7 @@ import type {
 
 type BatchSendResult = {
   index: number;
-  status: "sent" | "failed";
+  status: "sent" | "scheduled" | "failed";
   error?: string;
 };
 
@@ -31,7 +32,11 @@ export function useSendApplication() {
           toast.error(result.error);
           return;
         }
-        toast.success("Application sent!");
+        toast.success(
+          data.scheduledAt
+            ? `Application scheduled for ${formatScheduledAt(data.scheduledAt)}`
+            : "Application sent!",
+        );
         onSuccess?.();
       } catch (error) {
         console.error("[Applications] send failed:", error);
@@ -52,17 +57,22 @@ export function useSendApplication() {
           return;
         }
 
-        const sentCount = result.results.filter(
-          (item) => item.status === "sent",
+        const scheduledCount = result.results.filter(
+          (item) => item.status === "scheduled",
         ).length;
-        const failedCount = result.results.length - sentCount;
+        const acceptedCount = result.results.filter(
+          (item) => item.status !== "failed",
+        ).length;
+        const failedCount = result.results.length - acceptedCount;
 
         if (failedCount > 0) {
           toast.error(
-            `Batch finished: ${sentCount} accepted, ${failedCount} failed. Review the recipient results.`,
+            `Batch finished: ${acceptedCount} accepted, ${failedCount} failed. Review the recipient results.`,
           );
+        } else if (scheduledCount > 0) {
+          toast.success(`${scheduledCount} applications scheduled with Resend.`);
         } else {
-          toast.success(`${sentCount} applications accepted by Resend.`);
+          toast.success(`${acceptedCount} applications accepted by Resend.`);
         }
 
         onResult?.(result.results);

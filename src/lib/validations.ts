@@ -1,4 +1,17 @@
 import { z } from "zod";
+import { getScheduledAtError } from "@/lib/scheduling";
+
+export const requiredScheduledAtSchema = z
+  .string()
+  .trim()
+  .superRefine((value, context) => {
+    const error = getScheduledAtError(value);
+    if (error) {
+      context.addIssue({ code: "custom", message: error });
+    }
+  });
+
+export const scheduledAtSchema = requiredScheduledAtSchema.optional();
 
 export const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -14,6 +27,7 @@ export const applicationSchema = z.object({
   role: z.string().min(1, "Role is required"),
   recruiterName: z.string().optional(),
   templateId: z.string().optional(),
+  scheduledAt: scheduledAtSchema,
 });
 
 export const batchApplicationSchema = z
@@ -21,6 +35,7 @@ export const batchApplicationSchema = z
     company: z.string().trim().min(1, "Company name is required"),
     role: z.string().trim().min(1, "Role is required"),
     templateId: z.string().optional(),
+    scheduledAt: scheduledAtSchema,
     requestId: z.string().uuid("Invalid batch request"),
     recipients: z
       .array(

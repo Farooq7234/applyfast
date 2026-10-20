@@ -22,7 +22,9 @@ async function processDueFollowUps() {
     where: {
       followUpSent: false,
       followUpDate: { not: null, lte: new Date() },
-      status: { not: "bounced" },
+      status: {
+        in: ["sent", "delivered", "opened", "clicked", "delivery_delayed"],
+      },
     },
     include: {
       user: {

@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { applicationSchema, batchApplicationSchema } from "@/lib/validations";
+import {
+  applicationSchema,
+  batchApplicationSchema,
+  requiredScheduledAtSchema,
+} from "@/lib/validations";
+import { FOLLOW_UP_DELAY_MS, scheduledFollowUpDate } from "@/lib/scheduling";
 import { requireSession } from "@/lib/session";
 import { buildEmailBody, buildEmailSubject, getResend, getResendFrom } from "@/lib/email";
 import { revalidatePath } from "next/cache";
@@ -14,7 +19,10 @@ export async function createApplication(data: unknown) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { company, companyEmail, role, recruiterName, templateId } = parsed.data;
+  const { company, companyEmail, role, recruiterName, templateId, scheduledAt } =
+    parsed.data;
+
+  const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user) return { error: "User not found" };
@@ -55,6 +63,7 @@ export async function createApplication(data: unknown) {
     to: companyEmail,
     subject,
     html,
+    ...(scheduledDate ? { scheduledAt: scheduledDate.toISOString() } : {}),
   });
 
   if (sendError) {
@@ -85,14 +94,22 @@ export async function createApplication(data: unknown) {
       subject,
       body: html,
       resendEmailId: sendData?.id || null,
-      status: "sent",
-      followUpDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      status: scheduledDate ? "scheduled" : "sent",
+      scheduledAt: scheduledDate,
+      sentAt: scheduledDate ? null : new Date(),
+      followUpDate: scheduledDate
+        ? scheduledFollowUpDate(scheduledDate)
+        : new Date(Date.now() + FOLLOW_UP_DELAY_MS),
     },
   });
 
   revalidatePath("/applications");
   revalidatePath("/");
-  return { success: true, applicationId: application.id };
+  return {
+    success: true,
+    applicationId: application.id,
+    scheduledAt: scheduledDate?.toISOString() ?? null,
+  };
 }
 
 export async function createApplicationsBatch(data: unknown) {
@@ -103,7 +120,10 @@ export async function createApplicationsBatch(data: unknown) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { company, role, recipients, templateId, requestId } = parsed.data;
+  const { company, role, recipients, templateId, requestId, scheduledAt } =
+    parsed.data;
+  const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user) return { error: "User not found" };
   if (!user.resumeUrl) {
@@ -143,6 +163,7 @@ export async function createApplicationsBatch(data: unknown) {
     to: recipient.companyEmail,
     subject,
     html: body,
+    ...(scheduledDate ? { scheduledAt: scheduledDate.toISOString() } : {}),
   }));
 
   let batchResponse;
@@ -165,6 +186,8 @@ export async function createApplicationsBatch(data: unknown) {
     (batchResponse.data?.errors ?? []).map((item) => [item.index, item.message]),
   );
 
+  const successStatus = scheduledDate ? ("scheduled" as const) : ("sent" as const);
+
   const results = recipients.map((_, index) => {
     if (providerError) {
       return { index, status: "failed" as const, error: providerError.message };
@@ -183,7 +206,7 @@ export async function createApplicationsBatch(data: unknown) {
       };
     }
 
-    return { index, status: "sent" as const };
+    return { index, status: successStatus };
   });
 
   if (providerError) {
@@ -193,6 +216,7 @@ export async function createApplicationsBatch(data: unknown) {
   const applicationRows = renderedEmails.map(
     ({ recipient, subject, body }, index) => {
       const result = results[index];
+      const accepted = result.status !== "failed";
 
       return {
         userId: session.user.id,
@@ -202,13 +226,15 @@ export async function createApplicationsBatch(data: unknown) {
         recruiterName: recipient.recruiterName || null,
         subject,
         body,
-        resendEmailId:
-          result.status === "sent" ? providerItems[index]?.id ?? null : null,
+        resendEmailId: accepted ? providerItems[index]?.id ?? null : null,
         status: result.status,
-        followUpDate:
-          result.status === "sent"
-            ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-            : null,
+        scheduledAt: accepted ? scheduledDate : null,
+        sentAt: accepted && !scheduledDate ? new Date() : null,
+        followUpDate: accepted
+          ? scheduledDate
+            ? scheduledFollowUpDate(scheduledDate)
+            : new Date(Date.now() + FOLLOW_UP_DELAY_MS)
+          : null,
       };
     },
   );
@@ -256,6 +282,8 @@ export async function getApplications(search?: string, page = 1, pageSize = 15) 
         role: true,
         recruiterName: true,
         status: true,
+        scheduledAt: true,
+        sentAt: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -282,6 +310,12 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
     where: { id, userId: session.user.id },
   });
   if (!application) return { error: "Application not found" };
+  if (application.status === "scheduled") {
+    return {
+      error:
+        "This application is scheduled. Cancel the schedule before resending it immediately.",
+    };
+  }
 
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user) return { error: "User not found" };
@@ -300,15 +334,118 @@ export async function resendApplication(id: string): Promise<{ error?: string; s
 
   await db.application.update({
     where: { id },
-    data: { status: "sent", createdAt: new Date() , resendEmailId: sendData?.id ?? null,},
+    data: {
+      status: "sent",
+      createdAt: new Date(),
+      sentAt: new Date(),
+      resendEmailId: sendData?.id ?? null,
+    },
   });
 
   revalidatePath("/applications");
   return { success: true };
 }
 
+export async function cancelScheduledApplication(
+  id: string,
+): Promise<{ error?: string; success?: boolean }> {
+  const session = await requireSession();
+
+  const application = await db.application.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  if (!application) return { error: "Application not found" };
+  if (application.status !== "scheduled") {
+    return { error: "Only scheduled applications can be cancelled" };
+  }
+  if (!application.resendEmailId) {
+    return { error: "This application has no Resend email to cancel" };
+  }
+
+  const { error } = await getResend().emails.cancel(application.resendEmailId);
+  if (error) {
+    console.error("[Resend] cancel failed:", error);
+    return { error: `Could not cancel the scheduled email: ${error.message}` };
+  }
+
+  await db.application.update({
+    where: { id },
+    data: {
+      status: "cancelled",
+      scheduledAt: null,
+      sentAt: null,
+      followUpDate: null,
+    },
+  });
+
+  revalidatePath("/applications");
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function rescheduleApplication(
+  id: string,
+  scheduledAt: string,
+): Promise<{ error?: string; success?: boolean; scheduledAt?: string }> {
+  const session = await requireSession();
+
+  const parsed = requiredScheduledAtSchema.safeParse(scheduledAt);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const scheduledDate = new Date(parsed.data);
+
+  const application = await db.application.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  if (!application) return { error: "Application not found" };
+  if (application.status !== "scheduled") {
+    return { error: "Only scheduled applications can be rescheduled" };
+  }
+  if (!application.resendEmailId) {
+    return { error: "This application has no Resend email to reschedule" };
+  }
+
+  const { error } = await getResend().emails.update({
+    id: application.resendEmailId,
+    scheduledAt: scheduledDate.toISOString(),
+  });
+  if (error) {
+    console.error("[Resend] reschedule failed:", error);
+    return { error: `Could not reschedule the email: ${error.message}` };
+  }
+
+  await db.application.update({
+    where: { id },
+    data: {
+      scheduledAt: scheduledDate,
+      followUpDate: scheduledFollowUpDate(scheduledDate),
+    },
+  });
+
+  revalidatePath("/applications");
+  revalidatePath("/");
+  return { success: true, scheduledAt: scheduledDate.toISOString() };
+}
+
 export async function deleteApplication(id: string): Promise<{ error?: string; success?: boolean }> {
   const session = await requireSession();
+
+  const application = await db.application.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  if (!application) return { error: "Application not found" };
+
+  if (application.status === "scheduled" && application.resendEmailId) {
+    const { error } = await getResend().emails.cancel(application.resendEmailId);
+    if (error) {
+      console.error("[Resend] cancel before delete failed:", error);
+      return {
+        error: `Could not cancel the scheduled email before deleting: ${error.message}`,
+      };
+    }
+  }
 
   await db.application.deleteMany({
     where: { id, userId: session.user.id },
@@ -344,11 +481,13 @@ export async function getDashboardStats() {
     db.application.count({
       where: {
         userId,
-        status: "sent",
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
+        status: {
+          in: ["sent", "delivered", "opened", "clicked", "delivery_delayed"],
         },
+        OR: [
+          { sentAt: { gte: today, lt: tomorrow } },
+          { sentAt: null, createdAt: { gte: today, lt: tomorrow } },
+        ],
       },
     }),
 
@@ -452,7 +591,9 @@ export async function getApplicationStatusBreakdown() {
   });
 
   const statusMap: Record<string, string> = {
+    scheduled: "Scheduled",
     sent: "Sent",
+    cancelled: "Cancelled",
     delivered: "Delivered",
     opened: "Opened",
     clicked: "Clicked",

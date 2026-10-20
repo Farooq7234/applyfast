@@ -113,6 +113,7 @@ function safeProfileUrl(value: string | null | undefined): string | null {
 
 
 
+
 export function renderOutreachMessage(input: {
   company: string;
   recruiterName: string | null;
@@ -125,7 +126,7 @@ export function renderOutreachMessage(input: {
 
   const greeting = input.recruiterName?.trim()
     ? `Hi ${input.recruiterName.trim()},`
-    : "Hi,";
+    : `Hi ${company},`;
 
   const portfolio = safeProfileUrl(input.portfolio);
   const resume = safeProfileUrl(input.resumeUrl);
@@ -147,14 +148,9 @@ export function renderOutreachMessage(input: {
       name: "Quality Keeper",
       url: "https://quality-keeper.vercel.app",
       description:
-        "AI media compression SaaS with a 60% compression ratio and 200+ users, built with Next.js, Prisma and Cloudinary.",
+        "AI media compression SaaS with a compression media files and 200+ users, built with Next.js, Prisma and Cloudinary.",
     },
   ];
-
-  const intro =
-    `I am passionate about the work ${company} is doing. ` +
-    "I have hands-on experience building full stack applications and believe my skills align perfectly with your mission. " +
-    "I just want to build great products with a focused team.";
 
   const companyIntro =
     `I came across ${company} and am impressed with the products your team is building and the way you are building them. ` +
@@ -171,29 +167,27 @@ export function renderOutreachMessage(input: {
     ...(resume ? [resume] : []),
   ].join("\n");
 
-  const paragraphs = [
-    `TL;DR;\n${intro}`,
+  const text = [
     greeting,
+    "",
     companyIntro,
+    "",
     "Here are a few of my recent projects:",
+    "",
     ...projects.map(
       (project) =>
         `- ${project.name} (${project.url}) - ${project.description}`
     ),
+    "",
     closing,
+    "",
     "I would love the opportunity to discuss how I can contribute to your team.",
+    "",
     signature,
-  ];
-
-  const text = paragraphs.join("\n\n");
+  ].join("\n");
 
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#222;">
-      <p style="margin:0 0 16px 0;">
-        <strong>TL;DR;</strong><br>
-        ${escapeHtml(intro)}
-      </p>
-
       <p style="margin:0 0 16px 0;">
         ${escapeHtml(greeting)}
       </p>
@@ -212,7 +206,7 @@ export function renderOutreachMessage(input: {
             (project) => `
               <li style="margin-bottom:8px;">
                 <strong>${escapeHtml(project.name)}</strong>
-                (${escapeHtml(project.url)}) - 
+                (<a href="${escapeHtml(project.url)}">${escapeHtml(project.url)}</a>) -
                 ${escapeHtml(project.description)}
               </li>
             `
@@ -231,8 +225,8 @@ export function renderOutreachMessage(input: {
       <p style="margin:0;">
         Best regards,<br>
         ${escapeHtml(input.senderName.trim())}
-        ${portfolio ? `<br>${escapeHtml(portfolio)}` : ""}
-        ${resume ? `<br>${escapeHtml(resume)}` : ""}
+        ${portfolio ? `<br><a href="${escapeHtml(portfolio)}">${escapeHtml(portfolio)}</a>` : ""}
+        ${resume ? `<br><a href="${escapeHtml(resume)}">${escapeHtml(resume)}</a>` : ""}
       </p>
     </div>
   `;
@@ -243,6 +237,7 @@ export function renderOutreachMessage(input: {
     text,
   };
 }
+
 
 
 export function getUtcDate(date: Date): Date {

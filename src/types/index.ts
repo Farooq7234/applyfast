@@ -1,4 +1,14 @@
-export type ApplicationStatus = "sent" | "failed" | "pending";
+export type ApplicationStatus =
+  | "scheduled"
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "clicked"
+  | "delivery_delayed"
+  | "bounced"
+  | "complained"
+  | "failed"
+  | "cancelled";
 
 export interface User {
   id: string;
@@ -22,6 +32,8 @@ export interface Application {
   subject: string;
   body: string;
   status: ApplicationStatus;
+  scheduledAt: Date | null;
+  sentAt: Date | null;
   followUpDate: Date | null;
   followUpSent: boolean;
   createdAt: Date;
