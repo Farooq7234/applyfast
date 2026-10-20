@@ -8,7 +8,6 @@ import {
   SendHorizontal,
   CheckCircle2,
   XCircle,
-  Clock,
   Plus,
   MousePointerClick,
   MailOpen,
@@ -38,13 +37,6 @@ async function StatCards() {
         variant="success"
       />
       <StatCard
-        title="Pending Follow Ups"
-        value={stats.pendingFollowUps}
-        icon={Clock}
-        description="Follow ups due"
-        variant="warning"
-      />
-      <StatCard
         title="Opened"
         value={stats.opened}
         icon={MailOpen}
@@ -72,7 +64,6 @@ async function StatCards() {
 function StatCardsSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCardSkeleton />
       <StatCardSkeleton />
       <StatCardSkeleton />
       <StatCardSkeleton />

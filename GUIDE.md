@@ -98,8 +98,6 @@ Sent Today
 
 Failed
 
-Pending Follow Ups
-
 ---------------------------------------
 
 4. New Application
@@ -232,25 +230,13 @@ Search by company or role.
 
 ---------------------------------------
 
-8. Follow Up
+8. Outreach Cron
 
-Every application stores
+Vercel Cron calls `/api/cron/outreach` daily at 04:00 UTC.
 
-followUpDate
+Require `CRON_SECRET` as `Authorization: Bearer <secret>`.
 
-followUpSent
-
-Create an endpoint that can later be called by a cron job.
-
-The endpoint should
-
-Find all applications whose followUpDate is today or earlier
-
-followUpSent = false
-
-Send a follow-up email
-
-Mark followUpSent = true
+Process each opted-in outreach campaign and send the daily report.
 
 ---------------------------------------
 
@@ -283,8 +269,6 @@ recruiterName
 subject
 body
 status
-followUpDate
-followUpSent
 createdAt
 
 Template

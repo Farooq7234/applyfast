@@ -37,8 +37,6 @@ export interface Application {
   status: ApplicationStatus;
   scheduledAt: Date | null;
   sentAt: Date | null;
-  followUpDate: Date | null;
-  followUpSent: boolean;
   createdAt: Date;
 }
 
@@ -46,7 +44,8 @@ export interface DashboardStats {
   total: number;
   sentToday: number;
   failed: number;
-  pendingFollowUps: number;
+  opened: number;
+  clicked: number;
 }
 
 export interface ResendUsageEmailPeriod {

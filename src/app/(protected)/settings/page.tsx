@@ -38,17 +38,17 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Follow-up Cron</CardTitle>
+            <CardTitle className="text-base">Outreach Cron</CardTitle>
             <CardDescription>
-              Automated follow-up endpoint for cron job integration
+              Automated outreach endpoint for cron job integration
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <p className="text-sm text-muted-foreground">
-              Call this endpoint from your cron job to automatically send follow-up emails:
+              Call this endpoint from your cron job to automatically run the daily outreach batch:
             </p>
             <code className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
-              GET /api/follow-up
+              GET /api/cron/outreach
             </code>
             <p className="text-xs text-muted-foreground">
               Set <code className="text-xs bg-muted px-1 rounded">CRON_SECRET</code> env var and pass it as{" "}

@@ -3,7 +3,6 @@ import { format } from "date-fns";
 export const MAX_SCHEDULE_DAYS = 30;
 export const MIN_SCHEDULE_LEAD_MS = 60 * 1000;
 export const MAX_SCHEDULE_LEAD_MS = MAX_SCHEDULE_DAYS * 24 * 60 * 60 * 1000;
-export const FOLLOW_UP_DELAY_MS = 5 * 24 * 60 * 60 * 1000;
 
 export function getScheduledAtError(value: string, now = Date.now()): string | null {
   if (!value.trim()) return "Choose a date and time";
@@ -20,10 +19,6 @@ export function getScheduledAtError(value: string, now = Date.now()): string | n
   }
 
   return null;
-}
-
-export function scheduledFollowUpDate(scheduledAt: Date): Date {
-  return new Date(scheduledAt.getTime() + FOLLOW_UP_DELAY_MS);
 }
 
 export function toDateTimeLocalValue(date: Date): string {

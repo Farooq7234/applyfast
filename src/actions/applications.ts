@@ -6,7 +6,6 @@ import {
   batchApplicationSchema,
   requiredScheduledAtSchema,
 } from "@/lib/validations";
-import { FOLLOW_UP_DELAY_MS, scheduledFollowUpDate } from "@/lib/scheduling";
 import { requireSession } from "@/lib/session";
 import { getResend, getResendFrom } from "@/lib/email";
 import { buildTemplateVariables, renderTemplate } from "@/lib/template-variables";
@@ -75,8 +74,7 @@ export async function createApplication(data: unknown) {
         recruiterName: recruiterName || null,
         subject,
         body: html,
-        status: "failed",       
-        followUpDate: null,
+        status: "failed",
       },
     });
     return { error: `Email delivery failed: ${sendError.message}` };
@@ -95,9 +93,6 @@ export async function createApplication(data: unknown) {
       status: scheduledDate ? "scheduled" : "sent",
       scheduledAt: scheduledDate,
       sentAt: scheduledDate ? null : new Date(),
-      followUpDate: scheduledDate
-        ? scheduledFollowUpDate(scheduledDate)
-        : new Date(Date.now() + FOLLOW_UP_DELAY_MS),
     },
   });
 
@@ -231,11 +226,6 @@ export async function createApplicationsBatch(data: unknown) {
         status: result.status,
         scheduledAt: accepted ? scheduledDate : null,
         sentAt: accepted && !scheduledDate ? new Date() : null,
-        followUpDate: accepted
-          ? scheduledDate
-            ? scheduledFollowUpDate(scheduledDate)
-            : new Date(Date.now() + FOLLOW_UP_DELAY_MS)
-          : null,
       };
     },
   );
@@ -375,7 +365,6 @@ export async function cancelScheduledApplication(
       status: "cancelled",
       scheduledAt: null,
       sentAt: null,
-      followUpDate: null,
     },
   });
 
@@ -421,7 +410,6 @@ export async function rescheduleApplication(
     where: { id },
     data: {
       scheduledAt: scheduledDate,
-      followUpDate: scheduledFollowUpDate(scheduledDate),
     },
   });
 
@@ -471,7 +459,6 @@ export async function getDashboardStats() {
     total,
     sentToday,
     failed,
-    pendingFollowUps,
     opened,
     clicked,
   ] = await Promise.all([
@@ -502,17 +489,6 @@ export async function getDashboardStats() {
     db.application.count({
       where: {
         userId,
-        followUpSent: false,
-        followUpDate: {
-          lte: new Date(),
-        },
-        status: "sent",
-      },
-    }),
-
-    db.application.count({
-      where: {
-        userId,
         status: "opened",
       },
     }),
@@ -529,7 +505,6 @@ export async function getDashboardStats() {
     total,
     sentToday,
     failed,
-    pendingFollowUps,
     opened,
     clicked,
   };

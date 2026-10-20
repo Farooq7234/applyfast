@@ -71,16 +71,16 @@ App runs at [http://localhost:3000](http://localhost:3000).
 - **Applications** — Send applications individually or in personalized batches
 - **Applications table** — Search, view, resend, and delete application records
 - **Email templates** — Use Resend templates with variables such as `{{{ROLE}}}`, `{{{COMPANY}}}`, `{{{LINKEDIN}}}`, and `{{{NAME}}}`; optional fields like `{{{GITHUB}}}`, `{{{PHONE}}}`, and `{{{PROJECT_1}}}` disappear when empty
-- **Dashboard** — Application, delivery, and follow-up statistics
+- **Dashboard** — Application and delivery statistics
 - **Daily outreach** — Review a queue sourced from existing application contacts; automatically send up to 15 cold outreach attempts per user per UTC day
 - **Outreach controls** — Preview the personalized company/recruiter email, enable or pause automation, skip contacts, and inspect outcomes
 - **Daily outreach report** — Gemini summarizes persisted activity (with a deterministic fallback); a responsive React Email digest is sent through Resend to the account email
 
-## Daily follow-up and outreach Cron
+## Daily outreach Cron
 
-The existing Vercel Cron in `vercel.json` calls `/api/cron/follow-up` daily at 04:00 UTC. Do not add another Cron for outreach. The existing job processes application follow-ups and then each opted-in outreach campaign.
+The Vercel Cron in `vercel.json` calls `/api/cron/outreach` daily at 04:00 UTC. The job processes each opted-in outreach campaign.
 
-Configure `CRON_SECRET` in Vercel. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. The endpoint fails closed if the secret is missing or invalid. Existing application follow-ups continue if outreach or report processing fails.
+Configure `CRON_SECRET` in Vercel. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. The endpoint fails closed if the secret is missing or invalid.
 
 Open **Outreach** and inspect the personalized previews before enabling automatic sending. The campaign is paused by default. Once enabled, the daily job selects the oldest eligible untouched application contacts first, collapses duplicate addresses case-insensitively, and authorizes no more than 15 sends per user per UTC date. Failed sends still count toward that date's quota; retrying a known failure consumes another slot if available. Unknown outcomes must be checked in Resend first; within 23 hours, a confirmed retry reuses the original provider idempotency key and reservation. Older unknowns cannot be automatically retried.
 

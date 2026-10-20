@@ -5,7 +5,6 @@ import {
   BarChart3,
   Building2,
   CheckCircle2,
-  Clock3,
   FileText,
   Flame,
   Mail,
@@ -74,7 +73,7 @@ const featureCards = [
     eyebrow: "SEE YOUR PROGRESS",
     title: "Track every application",
     description:
-      "Search your application history and check dashboard stats for sent applications, opens, clicks, failed sends, and follow-ups due.",
+      "Search your application history and check dashboard stats for sent applications, opens, clicks, and failed sends.",
     className: "md:col-span-2",
   },
 ];
@@ -228,11 +227,10 @@ export default function LandingPage() {
               <p className="mt-4 leading-7 text-muted-foreground">
                 Your dashboard turns outreach into a clear activity overview.
                 See how many applications you have sent, which emails were
-                opened or clicked, and whether a send failed or a follow-up is
-                due.
+                opened or clicked, and whether a send failed.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
-                {["Sent", "Opened", "Clicked", "Failed", "Follow-ups due"].map(
+                {["Sent", "Opened", "Clicked", "Failed"].map(
                   (status) => (
                     <span
                       key={status}
@@ -262,7 +260,7 @@ export default function LandingPage() {
                   { label: "Applications sent", icon: SendHorizontal },
                   { label: "Emails opened", icon: Mail },
                   { label: "Links clicked", icon: MousePointerClick },
-                  { label: "Follow-ups due", icon: Clock3 },
+                  { label: "Emails delivered", icon: CheckCircle2 },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (

@@ -121,8 +121,7 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
         <p className="mt-1 text-muted-foreground">
           The existing Vercel Cron runs at 04:00 UTC. Enabling this campaign opts it into that
           schedule; pausing prevents future claims, but an already-authorized request may still be
-          in flight. Application follow-ups continue independently. A daily email report is sent
-          to your account email while this campaign exists.
+          in flight. A daily email report is sent to your account email while this campaign exists.
         </p>
       </div>
 
