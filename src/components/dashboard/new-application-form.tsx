@@ -622,7 +622,7 @@ export function NewApplicationForm({
                     </p>
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {batchRecipients.length}/100
+                    {batchRecipients.length} / 100
                   </span>
                 </div>
 
