@@ -347,7 +347,7 @@ async function sendClaimedAttempt(input: {
   }
 }
 
-export async function processOutreachCampaign(
+async function processOutreachCampaign(
   campaignId: string,
   userId: string,
   now = new Date(),

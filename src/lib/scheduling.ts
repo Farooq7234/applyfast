@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 
-export const MAX_SCHEDULE_DAYS = 30;
-export const MIN_SCHEDULE_LEAD_MS = 60 * 1000;
-export const MAX_SCHEDULE_LEAD_MS = MAX_SCHEDULE_DAYS * 24 * 60 * 60 * 1000;
+const MAX_SCHEDULE_DAYS = 30;
+const MIN_SCHEDULE_LEAD_MS = 60 * 1000;
+const MAX_SCHEDULE_LEAD_MS = MAX_SCHEDULE_DAYS * 24 * 60 * 60 * 1000;
 
 export function getScheduledAtError(value: string, now = Date.now()): string | null {
   if (!value.trim()) return "Choose a date and time";

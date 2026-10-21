@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import {
   Card,
   CardContent,
@@ -49,7 +49,7 @@ export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

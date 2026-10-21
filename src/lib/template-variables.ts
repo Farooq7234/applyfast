@@ -17,7 +17,7 @@ export const TEMPLATE_VARIABLE_TOKENS = TEMPLATE_VARIABLE_KEYS.map(
   (key) => `{{{${key}}}}`,
 );
 
-export type TemplateVariableKey = (typeof TEMPLATE_VARIABLE_KEYS)[number];
+type TemplateVariableKey = (typeof TEMPLATE_VARIABLE_KEYS)[number];
 
 export type TemplateVariableValues = Record<string, string>;
 

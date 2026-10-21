@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { MoreHorizontal, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";

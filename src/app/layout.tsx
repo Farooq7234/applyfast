@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Lora, Fira_Code } from "next/font/google";
+import { Geist, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { PwaRegister } from "@/components/pwa-register";
@@ -7,11 +7,6 @@ import { PwaRegister } from "@/components/pwa-register";
 const fontSans = Geist({
   subsets: ["latin"],
   variable: "--font-sans",
-});
-
-const fontSerif = Lora({
-  subsets: ["latin"],
-  variable: "--font-serif",
 });
 
 const fontMono = Fira_Code({

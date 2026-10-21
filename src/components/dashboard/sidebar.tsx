@@ -25,7 +25,6 @@ import {
   Building2,
   Send,
 } from "lucide-react";
-import { Button } from "../ui/button";
 import { MobileUsagePill, SidebarUsageWidget } from "./resend-usage-widget";
 
 const navItems = [
@@ -145,7 +144,7 @@ export function Sidebar() {
   return (
     <>
       {/* ── Desktop sidebar (hidden on mobile) ── */}
-      <aside className="hidden md:flex h-screen w-60 flex-shrink-0 flex-col border-r border-border bg-background">
+      <aside className="hidden md:flex h-screen w-60 shrink-0 flex-col border-r border-border bg-background">
         <SidebarContent />
       </aside>
 

@@ -11,7 +11,7 @@ export const requiredScheduledAtSchema = z
     }
   });
 
-export const scheduledAtSchema = requiredScheduledAtSchema.optional();
+const scheduledAtSchema = requiredScheduledAtSchema.optional();
 
 export const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -105,7 +105,4 @@ export const updateTargetSchema = z.object({
   contactEmails,
   status: z.enum(TARGET_STATUSES).optional(),
 });
-
-export type CreateTargetInput = z.infer<typeof createTargetSchema>;
-export type UpdateTargetInput = z.infer<typeof updateTargetSchema>;
 
