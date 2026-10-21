@@ -11,6 +11,7 @@ import {
   resendApplication,
 } from "@/actions/applications";
 import { formatScheduledAt, fromDateTimeLocalValue, getScheduleBounds, toDateTimeLocalValue } from "@/lib/scheduling";
+import { SchedulePresetButtons } from "@/components/dashboard/schedule-presets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -384,6 +385,14 @@ export function ApplicationsTable({ applications, searchQuery }: ApplicationsTab
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="reschedule-at">New date and time *</Label>
+              <SchedulePresetButtons
+                value={rescheduleValue}
+                onChange={(value) => {
+                  setRescheduleValue(value);
+                  setRescheduleError(null);
+                }}
+                disabled={isPending}
+              />
               <Input
                 id="reschedule-at"
                 type="datetime-local"

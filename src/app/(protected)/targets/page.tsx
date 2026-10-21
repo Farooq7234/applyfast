@@ -1,7 +1,7 @@
 import { getServerSession } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { getTargetCompanies } from "@/actions/targets"
-import { TargetsBoard } from "@/components/targets/targets-board"
+import { TargetsTable } from "@/components/targets/targets-table"
 
 export default async function TargetsPage() {
   const session = await getServerSession()
@@ -14,10 +14,10 @@ export default async function TargetsPage() {
       <div>
         <h1 className="text-xl font-semibold">Targets</h1>
         <p className="text-sm text-muted-foreground">
-          Research board for companies you want to work at. Separate from applications.
+          Companies you want to work at, with the emails and status you need.
         </p>
       </div>
-      <TargetsBoard companies={companies} />
+      <TargetsTable companies={companies} />
     </div>
   )
 }

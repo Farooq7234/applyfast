@@ -9,10 +9,12 @@ export function getResend(): Resend {
   return _resend;
 }
 
-const DEFAULT_RESEND_FROM = "Umar Farooq <contact@farooqx.in>";
-
 export function getResendFrom(): string {
-  return process.env.RESEND_FROM?.trim() || DEFAULT_RESEND_FROM;
+  const from = process.env.RESEND_FROM?.trim();
+  if (!from) {
+    throw new Error("RESEND_FROM is not set");
+  }
+  return from;
 }
 
 export function plainTextToEmailHtml(text: string): string {

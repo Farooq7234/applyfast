@@ -260,37 +260,19 @@ enum TargetStatus {
 }
 
 model TargetCompany {
-  id           String       @id @default(cuid())
-  userId       String
-  name         String
-  website      String
-  careersUrl   String?
-  linkedinUrl  String?
-  oneLiner     String?
-  industry     String?
-  techStack    String[]
-  companySize  String?
-  location     String?
-  fundingStage String?
-  status       TargetStatus @default(RESEARCHING)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  userId        String
+  name          String
+  website       String
+  careersUrl    String?
+  location      String?
+  contactEmails String[]     @default([])
+  status        TargetStatus @default(RESEARCHING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contacts TargetContact[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, website])
   @@index([userId, status])
-}
-
-model TargetContact {
-  id          String        @id @default(cuid())
-  companyId   String
-  company     TargetCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name        String
-  role        String?
-  email       String?
-  linkedinUrl String?
-  notes       String?
-  createdAt   DateTime      @default(now())
 }

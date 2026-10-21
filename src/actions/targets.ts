@@ -6,13 +6,10 @@ import { db } from "@/lib/db";
 import { requireSession } from "@/lib/session";
 import { emptyToNull, normalizeWebsite } from "@/lib/website";
 import {
-  createTargetContactSchema,
   createTargetSchema,
   updateTargetSchema,
   type TargetStatusValue,
 } from "@/lib/validations";
-
-const contactOrder = { createdAt: "desc" as const };
 
 function revalidateTargets() {
   revalidatePath("/targets");
@@ -25,20 +22,29 @@ function isUniqueConstraint(error: unknown) {
   );
 }
 
+function normalizeOptionalUrl(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  return normalizeWebsite(value);
+}
+
+function normalizeEmailList(emails: string[] | undefined): string[] | undefined {
+  if (emails === undefined) return undefined;
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of emails) {
+    const email = raw.trim().toLowerCase();
+    if (!email || seen.has(email)) continue;
+    seen.add(email);
+    result.push(email);
+  }
+  return result;
+}
+
 export async function getTargetCompanies() {
   const session = await requireSession();
   return db.targetCompany.findMany({
     where: { userId: session.user.id },
-    include: { contacts: { orderBy: contactOrder } },
     orderBy: { createdAt: "desc" },
-  });
-}
-
-export async function getTargetCompany(id: string) {
-  const session = await requireSession();
-  return db.targetCompany.findFirst({
-    where: { id, userId: session.user.id },
-    include: { contacts: { orderBy: contactOrder } },
   });
 }
 
@@ -50,10 +56,12 @@ export async function createTarget(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   let website: string;
+  let careersUrl: string | null;
   try {
     website = normalizeWebsite(parsed.data.website);
+    careersUrl = normalizeOptionalUrl(parsed.data.careersUrl);
   } catch {
-    return { error: "Must be a valid URL" };
+    return { error: "Enter a valid website or careers URL" };
   }
 
   try {
@@ -62,6 +70,10 @@ export async function createTarget(
         userId: session.user.id,
         name: parsed.data.name.trim(),
         website,
+        careersUrl,
+        location: emptyToNull(parsed.data.location),
+        contactEmails: normalizeEmailList(parsed.data.contactEmails) ?? [],
+        status: parsed.data.status ?? "RESEARCHING",
       },
     });
     revalidateTargets();
@@ -92,23 +104,16 @@ export async function updateTarget(
 
   if (input.name !== undefined) updateData.name = input.name.trim();
   if (input.status !== undefined) updateData.status = input.status;
-  if (input.techStack !== undefined) {
-    updateData.techStack = input.techStack.map((item) => item.trim()).filter(Boolean);
+  if (input.location !== undefined) updateData.location = emptyToNull(input.location);
+  if (input.contactEmails !== undefined) {
+    updateData.contactEmails = normalizeEmailList(input.contactEmails) ?? [];
   }
   if (input.careersUrl !== undefined) {
-    updateData.careersUrl = emptyToNull(input.careersUrl);
-  }
-  if (input.linkedinUrl !== undefined) {
-    updateData.linkedinUrl = emptyToNull(input.linkedinUrl);
-  }
-  if (input.oneLiner !== undefined) updateData.oneLiner = emptyToNull(input.oneLiner);
-  if (input.industry !== undefined) updateData.industry = emptyToNull(input.industry);
-  if (input.companySize !== undefined) {
-    updateData.companySize = emptyToNull(input.companySize);
-  }
-  if (input.location !== undefined) updateData.location = emptyToNull(input.location);
-  if (input.fundingStage !== undefined) {
-    updateData.fundingStage = emptyToNull(input.fundingStage);
+    try {
+      updateData.careersUrl = normalizeOptionalUrl(input.careersUrl);
+    } catch {
+      return { error: "Careers URL must be a valid URL" };
+    }
   }
 
   if (input.website !== undefined) {
@@ -152,54 +157,6 @@ export async function deleteTarget(
   if (!existing) return { error: "Company not found" };
 
   await db.targetCompany.delete({ where: { id } });
-  revalidateTargets();
-  return { success: true };
-}
-
-export async function addTargetContact(
-  companyId: string,
-  data: unknown
-): Promise<{ error?: string; id?: string }> {
-  const session = await requireSession();
-  const parsed = createTargetContactSchema.safeParse(data);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const company = await db.targetCompany.findFirst({
-    where: { id: companyId, userId: session.user.id },
-  });
-  if (!company) return { error: "Company not found" };
-
-  const contact = await db.targetContact.create({
-    data: {
-      companyId,
-      name: parsed.data.name.trim(),
-      role: emptyToNull(parsed.data.role),
-      email: emptyToNull(parsed.data.email),
-      linkedinUrl: emptyToNull(parsed.data.linkedinUrl),
-      notes: emptyToNull(parsed.data.notes),
-    },
-  });
-
-  revalidateTargets();
-  return { id: contact.id };
-}
-
-export async function deleteTargetContact(
-  companyId: string,
-  contactId: string
-): Promise<{ error?: string; success?: boolean }> {
-  const session = await requireSession();
-  const company = await db.targetCompany.findFirst({
-    where: { id: companyId, userId: session.user.id },
-  });
-  if (!company) return { error: "Company not found" };
-
-  const contact = await db.targetContact.findFirst({
-    where: { id: contactId, companyId },
-  });
-  if (!contact) return { error: "Contact not found" };
-
-  await db.targetContact.delete({ where: { id: contactId } });
   revalidateTargets();
   return { success: true };
 }

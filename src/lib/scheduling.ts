@@ -43,3 +43,44 @@ export function formatScheduledAt(value: string | Date): string {
   const date = typeof value === "string" ? new Date(value) : value;
   return format(date, "MMM d, yyyy 'at' h:mm a");
 }
+
+export type SchedulePreset = {
+  label: string;
+  value: string;
+};
+
+export function getSchedulePresets(now = new Date()): SchedulePreset[] {
+  function at(dayOffset: number, hour: number, minute = 0) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + dayOffset);
+    date.setHours(hour, minute, 0, 0);
+    return date;
+  }
+
+  const nextMonday = new Date(now);
+  const daysUntilMonday = (8 - nextMonday.getDay()) % 7 || 7;
+  nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
+  nextMonday.setHours(8, 0, 0, 0);
+
+  const candidates: Array<{ label: string; date: Date }> = [
+    { label: "Tomorrow 8:00 AM", date: at(1, 8) },
+    { label: "Tomorrow 12:00 PM", date: at(1, 12) },
+    { label: "Tomorrow 6:00 PM", date: at(1, 18) },
+    { label: "Monday 8:00 AM", date: nextMonday },
+  ];
+
+  const seen = new Set<number>();
+  const minimum = now.getTime() + MIN_SCHEDULE_LEAD_MS;
+
+  return candidates.flatMap((candidate) => {
+    const timestamp = candidate.date.getTime();
+    if (timestamp < minimum || seen.has(timestamp)) return [];
+    seen.add(timestamp);
+    return [
+      {
+        label: candidate.label,
+        value: toDateTimeLocalValue(candidate.date),
+      },
+    ];
+  });
+}

@@ -26,7 +26,7 @@ export async function syncOutreachRecipients(
   campaignId: string,
   userId: string,
 ): Promise<number> {
-  const [applications, repliedContacts] = await Promise.all([
+  const [applications, repliedCompanies] = await Promise.all([
     db.application.findMany({
       where: { userId },
       select: {
@@ -39,17 +39,15 @@ export async function syncOutreachRecipients(
       },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     }),
-    db.targetContact.findMany({
-      where: {
-        email: { not: null },
-        company: { userId, status: "REPLIED" },
-      },
-      select: { email: true },
+    db.targetCompany.findMany({
+      where: { userId, status: "REPLIED" },
+      select: { contactEmails: true },
     }),
   ]);
   const repliedEmails = new Set(
-    repliedContacts
-      .map((contact) => normalizeRecipientEmail(contact.email ?? ""))
+    repliedCompanies
+      .flatMap((company) => company.contactEmails)
+      .map((email) => normalizeRecipientEmail(email))
       .filter((email): email is string => email !== null),
   );
   const candidates = selectOutreachCandidates(applications, repliedEmails);

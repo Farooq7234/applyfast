@@ -31,6 +31,7 @@ import {
   Clock,
 } from "lucide-react";
 import { RoleCombobox } from "@/components/dashboard/role-combobox";
+import { SchedulePresetButtons } from "@/components/dashboard/schedule-presets";
 import {
   buildTemplateVariables,
   renderTemplate,
@@ -844,6 +845,14 @@ export function NewApplicationForm({
               {scheduleEnabled && (
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="scheduledAt">Date and time *</Label>
+                  <SchedulePresetButtons
+                    value={scheduledAtLocal}
+                    onChange={(value) => {
+                      setScheduledAtLocal(value);
+                      setBatchResults(null);
+                    }}
+                    disabled={isPending}
+                  />
                   <Input
                     id="scheduledAt"
                     type="datetime-local"

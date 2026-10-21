@@ -81,47 +81,31 @@ export const TARGET_STATUSES = [
 
 export type TargetStatusValue = (typeof TARGET_STATUSES)[number];
 
-const optionalUrl = z
-  .string()
-  .url("Must be a valid URL")
-  .or(z.literal(""))
-  .optional()
-  .nullable();
-
 const optionalText = z.string().optional().nullable();
 
-export const createTargetSchema = z.object({
-  name: z.string().min(1, "Company name is required").max(120),
-  website: z.string().min(1, "Website is required"),
-});
+const contactEmails = z
+  .array(z.string().trim().email("Enter a valid email address"))
+  .max(20, "Keep it to 20 emails or fewer")
+  .optional();
 
-export const updateTargetSchema = z.object({
-  name: z.string().min(1).max(120).optional(),
-  website: z.string().min(1).optional(),
-  careersUrl: optionalUrl,
-  linkedinUrl: optionalUrl,
-  oneLiner: optionalText,
-  industry: optionalText,
-  techStack: z.array(z.string().min(1)).optional(),
-  companySize: optionalText,
+export const createTargetSchema = z.object({
+  name: z.string().trim().min(1, "Company name is required").max(120),
+  website: z.string().min(1, "Website is required"),
+  careersUrl: optionalText,
   location: optionalText,
-  fundingStage: optionalText,
+  contactEmails,
   status: z.enum(TARGET_STATUSES).optional(),
 });
 
-export const createTargetContactSchema = z.object({
-  name: z.string().min(1, "Name is required").max(120),
-  role: optionalText,
-  email: z
-    .string()
-    .email("Invalid email address")
-    .or(z.literal(""))
-    .optional()
-    .nullable(),
-  linkedinUrl: optionalUrl,
-  notes: optionalText,
+export const updateTargetSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  website: z.string().min(1).optional(),
+  careersUrl: optionalText,
+  location: optionalText,
+  contactEmails,
+  status: z.enum(TARGET_STATUSES).optional(),
 });
 
 export type CreateTargetInput = z.infer<typeof createTargetSchema>;
 export type UpdateTargetInput = z.infer<typeof updateTargetSchema>;
-export type CreateTargetContactInput = z.infer<typeof createTargetContactSchema>;
+
