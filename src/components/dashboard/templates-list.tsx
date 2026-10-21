@@ -129,6 +129,10 @@ function TemplateForm({ initial, onSave, onCancel, saving }: TemplateFormProps) 
           className="font-mono text-sm resize-y"
           required
         />
+        <p className="text-xs text-muted-foreground">
+          Plain text line breaks are preserved automatically. You can also
+          write HTML tags such as {"<p>"} and {"<br />"}.
+        </p>
       </div>
 
       <div className="flex gap-2">
