@@ -69,13 +69,18 @@ export default async function ReceiveEmailsPage() {
                   <TableRow key={email.id}>
                     <TableCell className="font-medium">{email.from}</TableCell>
                     <TableCell>
-                      {email.subject ? (
-                        email.subject
-                      ) : (
-                        <span className="italic text-muted-foreground">
-                          (no subject)
-                        </span>
-                      )}
+                      <div
+                        className="w-48 truncate md:w-64"
+                        title={email.subject ?? "(no subject)"}
+                      >
+                        {email.subject ? (
+                          email.subject
+                        ) : (
+                          <span className="italic text-muted-foreground">
+                            (no subject)
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {email.to.join(", ")}
