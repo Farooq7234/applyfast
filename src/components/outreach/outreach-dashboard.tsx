@@ -92,10 +92,10 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col gap-6 p-4 md:p-6 bg-background">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Daily Outreach</h1>
+          <h1 className="text-xl font-semibold text-foreground">Daily Outreach</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Review cold outreach to existing application contacts. The daily job chooses
             the oldest eligible untouched recipients first and sends no more than 15 per UTC day.
@@ -107,14 +107,14 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
         </Button>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-foreground">
         <Metric label="Today's quota" value={`${data.authorizedToday} / ${data.limit}`} detail={`${data.remainingToday} remaining · UTC`} />
         <Metric label="Queued" value={data.counts.pending} detail="Eligible recipients" />
         <Metric label="Provider accepted" value={data.counts.accepted} detail="Acceptance is not delivery" />
         <Metric label="Confirmed delivered" value={data.counts.delivered} detail={`${data.counts.failed} failed · ${data.counts.unknown} unknown`} />
       </section>
 
-      <div className="rounded-none border border-border bg-muted/30 p-4 text-sm">
+      <div className="rounded-none border border-border bg-muted/30 p-4 text-sm text-foreground">
         <p className="font-medium">
           Automation is {data.campaign.enabled ? "enabled" : "paused"}.
         </p>
@@ -126,7 +126,7 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
       </div>
 
       {data.report && (
-        <section className="border border-border p-4">
+        <section className="border border-border p-4 text-foreground">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Daily report · {formatDate(data.report.reportDate)}</h2>
@@ -155,7 +155,7 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
         </section>
       )}
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3 text-foreground">
         <div>
           <h2 className="text-base font-semibold">Recipient queue and previews</h2>
           <p className="text-xs text-muted-foreground">
@@ -167,7 +167,7 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
             No application contacts found yet. Add contacts through Applications to build the outreach queue.
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 text-foreground">
             {data.recipients.map((recipient) => (
               <article key={recipient.id} className="border border-border p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -242,7 +242,7 @@ export function OutreachDashboard({ data }: { data: DashboardData }) {
         )}
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3 text-foreground">
         <div>
           <h2 className="text-base font-semibold">Today&apos;s send attempts</h2>
           <p className="text-xs text-muted-foreground">

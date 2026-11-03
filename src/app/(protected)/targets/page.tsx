@@ -10,9 +10,9 @@ export default async function TargetsPage() {
   const companies = await getTargetCompanies()
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col gap-6 p-4 md:p-6 bg-background">
       <div>
-        <h1 className="text-xl font-semibold">Targets</h1>
+        <h1 className="text-xl text-foreground font-semibold">Targets</h1>
         <p className="text-sm text-muted-foreground">
           Companies you want to work at, with the emails and status you need.
         </p>

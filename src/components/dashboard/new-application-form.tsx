@@ -38,6 +38,8 @@ import {
   type UserTemplate,
 } from "@/lib/template-variables";
 import { useSendApplication } from "@/hooks/use-send-application";
+import { linkSocial } from "@/lib/auth-client";
+import { GMAIL_SEND_SCOPE } from "@/lib/gmail-scopes";
 import { toast } from "sonner";
 
 interface NewApplicationFormProps {
@@ -58,6 +60,7 @@ interface NewApplicationFormProps {
   onSuccess?: () => void;
   onClose?: () => void;
   allowBatch?: boolean;
+  gmailConnected?: boolean;
 }
 
 interface BatchRecipient {
@@ -178,6 +181,7 @@ export function NewApplicationForm({
   onSuccess,
   onClose,
   allowBatch = true,
+  gmailConnected = false,
 }: NewApplicationFormProps) {
   const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState<UserTemplate | null>(
@@ -186,8 +190,13 @@ export function NewApplicationForm({
       null,
   );
   const [preview, setPreview] = useState(true);
-  const { isPending, sendApplication, sendApplicationsBatch } =
-    useSendApplication();
+  const {
+    isPending,
+    isGmailPending,
+    sendApplication,
+    sendApplicationsBatch,
+    sendWithGmail,
+  } = useSendApplication();
   const [batchMode, setBatchMode] = useState(false);
   const [batchRecipients, setBatchRecipients] = useState<BatchRecipient[]>(
     () => [
@@ -439,6 +448,52 @@ export function NewApplicationForm({
     sendApplicationsBatch(parsed.data, setBatchResults);
   }
 
+  async function connectGmail() {
+    try {
+      const result = await linkSocial({
+        provider: "google",
+        scopes: [GMAIL_SEND_SCOPE],
+        callbackURL: "/applications/new",
+        disableRedirect: true,
+      });
+
+      const url = result.data?.url;
+      if (!url) {
+        toast.error("Could not start the Gmail connection. Please try again.");
+        return;
+      }
+
+      const connectUrl = new URL(url);
+      connectUrl.searchParams.set("prompt", "consent");
+      window.location.href = connectUrl.toString();
+    } catch (error) {
+      console.error("[Gmail] connect failed:", error);
+      toast.error("Could not connect Gmail. Please try again.");
+    }
+  }
+
+  function handleGmailSend() {
+    if (!gmailConnected) {
+      void connectGmail();
+      return;
+    }
+
+    void handleSubmit((data) => {
+      sendWithGmail(data, (result) => {
+        if (result.success) {
+          if (onSuccess) {
+            onSuccess();
+            handleClear();
+          }
+          return;
+        }
+        if (result.code === "not_connected") {
+          void connectGmail();
+        }
+      });
+    })();
+  }
+
   function changeBatchMode(enabled: boolean) {
     setBatchResults(null);
     if (
@@ -533,6 +588,8 @@ export function NewApplicationForm({
             <Button
               type="button"
               size="sm"
+              className={'text-foreground'}
+
               variant={batchMode ? "ghost" : "default"}
               aria-pressed={!batchMode}
               disabled={isPending}
@@ -542,6 +599,7 @@ export function NewApplicationForm({
             </Button>
             <Button
               type="button"
+              className={'text-foreground'}
               size="sm"
               variant={batchMode ? "default" : "ghost"}
               aria-pressed={batchMode}
@@ -904,51 +962,19 @@ export function NewApplicationForm({
             <Button
               type="button"
               className="flex-1 gap-2"
-              onClick={() => {
-                const recipient = watchedValues.companyEmail?.trim();
-
-                if (!recipient) {
-                  toast.error("Please enter the company email address.");
-                  return;
-                }
-
-                const subject = previewSubject || "";
-
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = previewBody;
-
-                // Preserve paragraph and line breaks
-                tempDiv.querySelectorAll("br").forEach((br) => {
-                  br.replaceWith("\n");
-                });
-
-                tempDiv
-                  .querySelectorAll("p, div, li, h1, h2, h3")
-                  .forEach((el) => {
-                    el.prepend("\n");
-                    el.append("\n");
-                  });
-
-                const body = (tempDiv.innerText || tempDiv.textContent || "")
-                  .replace(/\n[ \t]*\n[ \t]*\n/g, "\n\n")
-                  .trim();
-
-                const gmailUrl = new URL("https://mail.google.com/mail/");
-                gmailUrl.searchParams.set("view", "cm");
-                gmailUrl.searchParams.set("fs", "1");
-                gmailUrl.searchParams.set("to", recipient);
-                gmailUrl.searchParams.set("su", subject);
-                gmailUrl.searchParams.set("body", body);
-
-                window.open(
-                  gmailUrl.toString(),
-                  "_blank",
-                  "noopener,noreferrer",
-                );
-              }}
+              onClick={handleGmailSend}
+              disabled={isPending || isGmailPending}
             >
-              <Send className="h-4 w-4" />
-              Send via Gmail
+              {isGmailPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isGmailPending
+                ? "Sending via Gmail..."
+                : gmailConnected
+                  ? "Send via Gmail"
+                  : "Connect Gmail"}
             </Button>
           )}
           {showPreview && (

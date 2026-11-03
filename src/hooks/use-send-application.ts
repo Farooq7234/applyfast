@@ -6,6 +6,10 @@ import {
   createApplication,
   createApplicationsBatch,
 } from "@/actions/applications";
+import {
+  sendApplicationViaGmail,
+  type GmailSendResult,
+} from "@/actions/gmail";
 import { formatScheduledAt } from "@/lib/scheduling";
 import type {
   ApplicationInput,
@@ -20,6 +24,7 @@ type BatchSendResult = {
 
 export function useSendApplication() {
   const [isPending, startTransition] = useTransition();
+  const [isGmailPending, startGmailTransition] = useTransition();
 
   const sendApplication = async (
     data: ApplicationInput,
@@ -85,5 +90,31 @@ export function useSendApplication() {
     });
   };
 
-  return { isPending, sendApplication, sendApplicationsBatch };
+  const sendWithGmail = (
+    data: ApplicationInput,
+    onResult?: (result: GmailSendResult) => void,
+  ) => {
+    startGmailTransition(async () => {
+      try {
+        const result = await sendApplicationViaGmail(data);
+        if (result.success) {
+          toast.success("Application sent via Gmail!");
+        } else {
+          toast.error(result.error);
+        }
+        onResult?.(result);
+      } catch (error) {
+        console.error("[Gmail] send failed:", error);
+        toast.error("Could not send the application via Gmail. Please try again.");
+      }
+    });
+  };
+
+  return {
+    isPending,
+    isGmailPending,
+    sendApplication,
+    sendApplicationsBatch,
+    sendWithGmail,
+  };
 }
