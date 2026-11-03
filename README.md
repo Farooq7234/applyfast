@@ -28,8 +28,6 @@ Copy `.env.example` to `.env.local` and fill in your values:
 DATABASE_URL="postgresql://..."         # Neon connection string
 BETTER_AUTH_SECRET="..."                # Random 32+ char secret
 BETTER_AUTH_URL="http://localhost:3000"
-GITHUB_CLIENT_ID="..."
-GITHUB_CLIENT_SECRET="..."
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
 RESEND_API_KEY="re_..."
