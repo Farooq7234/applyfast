@@ -21,18 +21,38 @@ export type GmailSendResult =
   | { success: true; messageId: string }
   | { success?: false; error: string; code?: "not_connected" | "forbidden" | "quota" | "failed" };
 
-async function getGoogleAccountScope(userId: string) {
-  const account = await db.account.findFirst({
+type GmailAccount = {
+  accountId: string;
+  scope: string | null;
+};
+
+async function getGmailAccount(userId: string): Promise<GmailAccount | null> {
+  const accounts = await db.account.findMany({
     where: { userId, providerId: "google" },
-    select: { scope: true },
+    select: {
+      accountId: true,
+      scope: true,
+      refreshToken: true,
+      updatedAt: true,
+    },
+    orderBy: { updatedAt: "desc" },
   });
-  return account?.scope ?? null;
+
+  const gmailAccounts = accounts.filter((account) =>
+    hasGmailSendScope(account.scope),
+  );
+
+  return (
+    gmailAccounts.find((account) => account.refreshToken !== null) ??
+    gmailAccounts[0] ??
+    null
+  );
 }
 
 export async function getGmailStatus(): Promise<GmailStatus> {
   const session = await requireSession();
-  const scope = await getGoogleAccountScope(session.user.id);
-  return { connected: hasGmailSendScope(scope) };
+  const account = await getGmailAccount(session.user.id);
+  return { connected: account !== null };
 }
 
 export async function sendApplicationViaGmail(
@@ -47,9 +67,9 @@ export async function sendApplicationViaGmail(
 
   const { company, companyEmail, role, recruiterName, templateId } = parsed.data;
 
-  const [user, scope] = await Promise.all([
+  const [user, gmailAccount] = await Promise.all([
     db.user.findUnique({ where: { id: session.user.id } }),
-    getGoogleAccountScope(session.user.id),
+    getGmailAccount(session.user.id),
   ]);
 
   if (!user) return { error: "User not found", code: "failed" };
@@ -59,7 +79,7 @@ export async function sendApplicationViaGmail(
       code: "failed",
     };
   }
-  if (!hasGmailSendScope(scope)) {
+  if (!gmailAccount) {
     return {
       error: "Gmail is not connected. Connect Gmail before sending.",
       code: "not_connected",
@@ -96,7 +116,10 @@ export async function sendApplicationViaGmail(
   try {
     const requestHeaders = await headers();
     const token = await auth.api.getAccessToken({
-      body: { providerId: "google" },
+      body: {
+        providerId: "google",
+        accountId: gmailAccount.accountId,
+      },
       headers: requestHeaders,
     });
     accessToken = token.accessToken;
